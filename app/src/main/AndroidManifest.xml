@@ -9,8 +9,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
-        <activity android:name=".BoardActivity"/>
-        <activity android:name=".SignUpFirstStepActivity" />
+        <activity android:name=".SignUpSecondActivity"/>
+        <activity android:name=".SignUpFirstActivity" />
+        <activity android:name=".BoardActivity" />
         <activity android:name=".SignInActivity" />
         <activity android:name=".MainMoreActivity" />
         <activity android:name=".MainMapActivity" />
