@@ -4,8 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SignUpFirstStepActivity">
+    tools:context=".SignUpSecondActivity">
 
+    <!--    뒤로가기 버튼 -->
     <ImageView
         android:id="@+id/backBtnIV"
         android:layout_width="wrap_content"
@@ -25,11 +26,10 @@
         android:text="@string/signUp"
         android:textSize="30sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/inviteGuidance"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/greetingTV"/>
-
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!--    단계 표시 (예 : step 1, step 2)-->
     <TextView
@@ -40,8 +40,7 @@
         android:text="@string/firstStep"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@color/mainBackground"
-        app:layout_constraintBottom_toTopOf="@+id/greetingTV"
+        app:layout_constraintBottom_toTopOf="@+id/inviteGuidance"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/secondStepTV"
         app:layout_constraintTop_toBottomOf="@+id/signUpTV" />
@@ -52,82 +51,107 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:text="@string/secondStep"
+        android:textColor="@color/mainBackground"
         android:textSize="20sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@id/greetingTV"
+        app:layout_constraintBottom_toTopOf="@id/inviteGuidance"
         app:layout_constraintLeft_toRightOf="@+id/firstStepTV"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/signUpTV" />
 
     <!--    사용자 알림 -->
     <TextView
-        android:id="@+id/greetingTV"
+        android:id="@+id/inviteGuidance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="100dp"
-        android:text="@string/greeting"
+        android:text="@string/inviteGuidance"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@id/userIDET"
+        app:layout_constraintBottom_toTopOf="@id/myInviteNoticeTV"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/signUpTV" />
 
-    <EditText
-        android:id="@+id/userIDET"
+    <!--    바로 하단 view 의 기능 사용자에게 알려주는 알림-->
+    <TextView
+        android:id="@+id/myInviteNoticeTV"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="50dp"
         android:layout_marginTop="50dp"
         android:layout_marginEnd="50dp"
-        android:hint="@string/id"
-        app:layout_constraintBottom_toTopOf="@+id/passwordED"
+        android:text="@string/myInviteCodeNotice"
+        app:layout_constraintBottom_toTopOf="@+id/myInviteCode"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/greetingTV" />
+        app:layout_constraintTop_toBottomOf="@id/inviteGuidance" />
 
+    <!--    본인의 초대 코드를 보여주는 EditText (inputType : none)-->
     <EditText
-        android:id="@+id/passwordED"
+        android:id="@+id/myInviteCode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:inputType="none"
+        app:layout_constraintBottom_toTopOf="@+id/opponentCodeED"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/myInviteNoticeTV" />
+
+    <!--    초대 코드 공유하기 버튼-->
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_color_rounded"
+        android:text="@string/share"
+        android:textColor="@color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/myInviteCode"
+        app:layout_constraintRight_toRightOf="@id/myInviteCode"
+        app:layout_constraintTop_toTopOf="@+id/myInviteCode" />
+
+    <!--    바로 하단 view 의 기능 사용자에게 알려주는 알림-->
+    <TextView
+        android:id="@+id/opponentInviteNoticeTV"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="50dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="50dp"
-        android:hint="@string/password"
-        app:layout_constraintBottom_toTopOf="@id/signUpBtn"
+        android:text="@string/opponentInviteCodeNotice"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/userIDET" />
+        app:layout_constraintTop_toBottomOf="@+id/myInviteCode" />
+
+
+    <EditText
+        android:id="@+id/opponentCodeED"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:hint="@string/opponentInviteCode"
+        app:layout_constraintBottom_toTopOf="@id/connectBtn"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/opponentInviteNoticeTV" />
 
     <Button
-        android:id="@+id/signUpBtn"
+        android:id="@+id/connectBtn"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="70dp"
         android:layout_marginTop="40dp"
         android:layout_marginEnd="70dp"
         android:background="@drawable/btn_color_rounded"
-        android:text="@string/signUp"
+        android:text="@string/connect"
         android:textColor="@color/white"
         android:textSize="20sp"
-        app:layout_constraintBottom_toTopOf="@+id/googleSignUpBtn"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/passwordED" />
-
-    <Button
-        android:id="@+id/googleSignUpBtn"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="70dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="70dp"
-        android:background="@drawable/btn_rounded"
-        android:text="@string/googleSignUp"
-        android:textColor="@color/black"
-        android:textSize="20sp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/signUpBtn" />
+        app:layout_constraintTop_toBottomOf="@id/opponentCodeED" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
