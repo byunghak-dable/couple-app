@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">CoupleApp</string>
+<!--    로그인/회원가입-->
+    <string name="id">아이디</string>
+    <string name="password">패스워드</string>
+    <string name="signIn">로그인</string>
+    <string name="signUp">회원가입</string>
+    <string name="forgot">아이디/비밀번호 찾기</string>
+    <string name="googleSignIn">구글로 로그인</string>
+<!--    네비게이션 바 목록-->
+    <string name="home">홈</string>
+    <string name="chat">채팅</string>
+    <string name="album">앨범</string>
+    <string name="map">지도</string>
+    <string name="more">더보기</string>
+</resources>
