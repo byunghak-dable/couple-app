@@ -1,13 +1,23 @@
 <resources>
     <string name="app_name">CoupleApp</string>
-<!--    로그인/회원가입-->
+    <string name="share">공유</string>
+    <!--    로그인/회원가입-->
     <string name="id">아이디</string>
     <string name="password">패스워드</string>
     <string name="signIn">로그인</string>
     <string name="signUp">회원가입</string>
+    <string name="connect">연결하기</string>
     <string name="forgot">아이디/비밀번호 찾기</string>
     <string name="googleSignIn">구글로 로그인</string>
-<!--    네비게이션 바 목록-->
+    <string name="googleSignUp">구글로 회원가입</string>
+    <string name="firstStep">step 1</string>
+    <string name="secondStep">step 2</string>
+    <string name="greeting">CoupleApp에 오신 것을 환영합니다.\n회원가입을 진행해 주세요.</string>
+    <string name="inviteGuidance">상대방에게 초대코드를 보내거나\n상대의 초대코드를 입력해주세요.</string>
+    <string name="opponentInviteCode">상대방 초대 코드</string>
+    <string name="myInviteCodeNotice">내 초대코드</string>
+    <string name="opponentInviteCodeNotice">상대방의 초대코드를 입력해주세요</string>
+    <!--    네비게이션 바 목록-->
     <string name="home">홈</string>
     <string name="chat">채팅</string>
     <string name="album">앨범</string>
