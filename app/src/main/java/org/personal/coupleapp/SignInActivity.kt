@@ -30,7 +30,7 @@ class SignInActivity : AppCompatActivity(), View.OnClickListener  {
 
     // 회원가입으로 이동
     private fun signUp() {
-        val toSignUp = Intent(this, SignUpFirstStepActivity::class.java)
+        val toSignUp = Intent(this, SignUpFirstActivity::class.java)
         startActivity(toSignUp)
     }
 
