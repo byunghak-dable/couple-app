@@ -18,7 +18,7 @@ class HTTPConnection(private val requestUrl: String) {
         // HTTPRequest 클래스에서 string 형식으로 requestUrl 를 받아온다
         val url = URL(requestUrl)
         val urlConnection = url.openConnection() as HttpURLConnection
-        urlConnection.requestMethod = "POST"
+        urlConnection.requestMethod = "GET"
         urlConnection.setRequestProperty("Content-Type", "application/json; utf-8")
         urlConnection.setRequestProperty("Accept", "application/json")
 
