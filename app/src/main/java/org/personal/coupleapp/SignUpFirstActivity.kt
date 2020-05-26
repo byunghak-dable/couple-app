@@ -1,41 +1,201 @@
 package org.personal.coupleapp
 
+import android.app.Activity
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
 import android.view.View
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_sign_up_first.*
+import org.json.JSONObject
+import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.CHECK_EMAIL_VALIDATION
+import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.TO_SECOND_STEP
+import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.isEmailValid
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
+import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
+import java.lang.ref.WeakReference
 
-class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener {
+class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatcher {
+
+    private val TAG = javaClass.name
+    private lateinit var serverConnectionThread: ServerConnectionThread
+    // utils/singleton 싱글톤 객체
+    // Memo : object 는 한번만 선언 가능
+    private val handlerMessageHelper = HandlerMessageHelper
+    private var isPasswordValid = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up_first)
-
         setListener()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // 스레드를 onStart 에서 시작하고 onStop 에서 종료
+        startWorkerThread()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // 스레드 종료
+        stopWorkerThread()
     }
 
     private fun setListener() {
         signUpBtn.setOnClickListener(this)
+        emailED.addTextChangedListener(this)
+        passwordED.addTextChangedListener(this)
+    }
+
+    // 백그라운드 스레드 실행
+    private fun startWorkerThread() {
+        val mainHandler = CustomHandler(this, emailValidationTV)
+        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", mainHandler)
+        serverConnectionThread.start()
+    }
+
+    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
+    private fun stopWorkerThread() {
+        serverConnectionThread.looper.quit()
     }
 
     override fun onClick(v: View?) {
-        when(v?.id) {
+        when (v?.id) {
             R.id.signUpBtn -> toSecondStep()
             R.id.googleSignUpBtn -> googleSignUp()
         }
     }
 
-    //------------------ 클릭 시 이벤트 관리하는 메소드 모음 ------------------
-    // TODO: 데이터 이동 및 서버와의 통신 구현해야함
+    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+    }
+    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+    }
+    override fun afterTextChanged(s: Editable?) {
+        when (s.hashCode()) {
+            // 이메일 입력 시 validation check
+            emailED.text.hashCode() -> {
 
-    // 회원가입 두번 째 단계로 가는 메소드
-    private fun toSecondStep() {
-        val toSecondStep = Intent(this, SignUpSecondActivity::class.java)
-        startActivity(toSecondStep)
+                val isEmailFormatValid = android.util.Patterns.EMAIL_ADDRESS.matcher(s.toString()).matches()
+                emailValidationTV.visibility = View.VISIBLE
+
+                if (isEmailFormatValid) {
+                    val postJsonObject = JSONObject()
+                    postJsonObject.put("what", "emailValidation")
+                    postJsonObject.put("email", s.toString())
+
+                    handlerMessageHelper.serverPostRequest(serverConnectionThread, "SignUp", postJsonObject.toString(), CHECK_EMAIL_VALIDATION)
+                } else {
+                    changeValidationStyle(emailValidationTV, R.string.emailInValid, R.color.red)
+                }
+            }
+
+            // 비밀 번호 입력 시 validation check
+            passwordED.text.hashCode()  -> {
+
+                val regex = Regex("^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[\$@\$!%*#?&]).{8,15}.\$")
+                PWValidationTV.visibility = View.VISIBLE
+
+                isPasswordValid = if (s.toString().matches(regex)){
+                    changeValidationStyle(PWValidationTV, R.string.valid, R.color.green)
+                    true
+                }else {
+                    changeValidationStyle(PWValidationTV, R.string.passwordValidation, R.color.red)
+                    false
+                }
+            }
+        }
     }
 
+    // 사용자에게 이메일, 비밀번호 유효성 검사 결과를 알려주는 TextView 스타일 변경
+    private fun changeValidationStyle(textView: TextView, text: Int, color: Int) {
+        textView.text = this.getText(text)
+        textView.setTextColor(this.getColor(color))
+    }
+
+    //------------------ 클릭 시 이벤트 관리하는 메소드 모음 ------------------
+    // 회원가입 두번 째 단계로 가는 메소드
+    private fun toSecondStep() {
+
+        if (isEmailValid) {
+            if (isPasswordValid) {
+                val email = emailED.text.toString()
+                val password = passwordED.text.toString()
+                val postJSONObject = JSONObject()
+                postJSONObject.put("what", "SignUpFirstStep")
+                postJSONObject.put("email", email)
+                postJSONObject.put("password", password)
+
+                handlerMessageHelper.serverPostRequest(serverConnectionThread, "SignUp", postJSONObject.toString(), TO_SECOND_STEP)
+            } else {
+                Toast.makeText(this, this.getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
+            }
+        }else {
+            Toast.makeText(this, this.getText(R.string.checkEmail), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // TODO: 구글 회원가입 해야함
     private fun googleSignUp() {
 
+    }
+
+    //------------------ ServerThread 와의 통신 결과를 안드로이드 Main UI 에 적용하는 Handler 클래스 ------------------
+    private class CustomHandler(activity: Activity, emailValidationTV: TextView) : Handler() {
+
+        companion object {
+            const val CHECK_EMAIL_VALIDATION = 1
+            const val TO_SECOND_STEP = 2
+            var isEmailValid = false
+        }
+
+        private val activityWeakReference: WeakReference<Activity> = WeakReference(activity)
+        private val textViewWeakReference: WeakReference<TextView> = WeakReference(emailValidationTV)
+
+        override fun handleMessage(msg: Message) {
+            super.handleMessage(msg)
+
+            val emailValidationTV = textViewWeakReference.get()
+            val activity = activityWeakReference.get()
+
+            // 액티비티가 destroy 되지 않았을 때
+            if (activity != null) {
+                when (msg.what) {
+                    CHECK_EMAIL_VALIDATION -> {
+                        val isDuplicated = msg.obj.toString()
+
+                        if (isDuplicated == "false") {
+                            emailValidationTV?.text = activity.getText(R.string.valid)
+                            emailValidationTV?.setTextColor(activity.getColor(R.color.green))
+                            isEmailValid = true
+                        } else {
+                            emailValidationTV?.text = activity.getText(R.string.emailDuplicated)
+                            emailValidationTV?.setTextColor(activity.getColor(R.color.red))
+                            isEmailValid = false
+                        }
+                    }
+
+                    TO_SECOND_STEP -> {
+                        val isUploadSuccess = msg.obj.toString()
+                        if (isUploadSuccess == "true") {
+                            //TODO: step two 에서 아이디 정보 intent 로 보낼지 preference 로 저장할 지 고민 중
+                            val toStepTwo = Intent(activity, SignUpSecondActivity::class.java)
+                            activity.startActivity(toStepTwo)
+                        } else {
+                            Toast.makeText(activity, activity.getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                // 액티비티가 destroy 되면 바로 빠져나오도록
+            } else {
+                return
+            }
+        }
     }
 }
