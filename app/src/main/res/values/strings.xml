@@ -2,7 +2,7 @@
     <string name="app_name">CoupleApp</string>
     <string name="share">공유</string>
     <!--    로그인/회원가입-->
-    <string name="id">아이디</string>
+    <string name="id">이메일</string>
     <string name="password">패스워드</string>
     <string name="signIn">로그인</string>
     <string name="signUp">회원가입</string>
