@@ -2,12 +2,12 @@
     <string name="app_name">CoupleApp</string>
     <string name="share">공유</string>
     <!--    로그인/회원가입-->
-    <string name="id">이메일</string>
+    <string name="email">이메일</string>
     <string name="password">패스워드</string>
     <string name="signIn">로그인</string>
     <string name="signUp">회원가입</string>
     <string name="connect">연결하기</string>
-    <string name="forgot">아이디/비밀번호 찾기</string>
+    <string name="forgot">이메일/비밀번호 찾기</string>
     <string name="googleSignIn">구글로 로그인</string>
     <string name="googleSignUp">구글로 회원가입</string>
     <string name="firstStep">step 1</string>
