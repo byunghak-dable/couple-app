@@ -22,12 +22,11 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         return returnDataList
     }
 
-    // TODO : 실제 데이터 handle 해야 함
+    // 서버에 posting 만 하는 경우 성공했는지, 실패했는지를 반환한다
     override fun postToServer(postJsonString: String): String {
         val stringUrl = serverDomain + serverPage
         hTTPConnection = HTTPConnection(stringUrl)
-        hTTPConnection.postRequest(postJsonString)
 
-        return "returnData 넣어야 함"
+        return hTTPConnection.postRequest(postJsonString)
     }
 }
