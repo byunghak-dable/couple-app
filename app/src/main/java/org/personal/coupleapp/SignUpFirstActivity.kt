@@ -24,6 +24,7 @@ import java.lang.ref.WeakReference
 class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatcher {
 
     private val TAG = javaClass.name
+    private val serverPage = "SignUp"
     private lateinit var serverConnectionThread: ServerConnectionThread
     // utils/singleton 싱글톤 객체
     // Memo : object 는 한번만 선언 가능
@@ -90,7 +91,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     postJsonObject.put("what", "emailValidation")
                     postJsonObject.put("email", s.toString())
 
-                    handlerMessageHelper.serverPostRequest(serverConnectionThread, "SignUp", postJsonObject.toString(), CHECK_EMAIL_VALIDATION)
+                    handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), CHECK_EMAIL_VALIDATION)
                 } else {
                     changeValidationStyle(emailValidationTV, R.string.emailInValid, R.color.red)
                 }
@@ -128,11 +129,11 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                 val email = emailED.text.toString()
                 val password = passwordED.text.toString()
                 val postJSONObject = JSONObject()
-                postJSONObject.put("what", "SignUpFirstStep")
+                postJSONObject.put("what", "signUpFirstStep")
                 postJSONObject.put("email", email)
                 postJSONObject.put("password", password)
 
-                handlerMessageHelper.serverPostRequest(serverConnectionThread, "SignUp", postJSONObject.toString(), TO_SECOND_STEP)
+                handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP)
             } else {
                 Toast.makeText(this, this.getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
             }
