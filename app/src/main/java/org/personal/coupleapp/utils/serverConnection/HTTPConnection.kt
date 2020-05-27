@@ -52,23 +52,19 @@ class HTTPConnection(private val requestUrl: String) {
         urlConnection.setRequestProperty("Content-Type", "application/json; utf-8")
         urlConnection.setRequestProperty("Accept", "application/json")
 
-        // 클라이언트에서 서버로 데이터 전송
+
         try {
+            // 클라이언트에서 서버로 데이터 전송
             outputStream = DataOutputStream(urlConnection.outputStream)
             outputStream.write(postDataByteArray)
             outputStream.flush()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.i(TAG, "postRequest outputStream 문제 발생")
-        }
 
-        // 서버에서 클라이언트로 데이터 받기
-        try {
+            // 서버에서 클라이언트로 데이터 받기
             jsonString = urlConnection.inputStream.bufferedReader().use { it.readText() }
             Log.i(TAG, jsonString)
         } catch (e: Exception) {
             e.printStackTrace()
-            Log.i(TAG, "postRequest inputStream 문제 발생")
+            Log.i(TAG, "postRequest inputStream or OutputStream 문제 발생")
         } finally {
             // 에러가 발생하더라도 openConnection 으로 연결한 connection 닫기
             urlConnection.disconnect()
