@@ -41,16 +41,12 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up_first)
         setListener()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        // 스레드를 onStart 에서 시작하고 onStop 에서 종료
+        // 스레드 시작
         startWorkerThread()
     }
 
-    override fun onStop() {
-        super.onStop()
+    override fun onDestroy() {
+        super.onDestroy()
         // 스레드 종료
         stopWorkerThread()
     }

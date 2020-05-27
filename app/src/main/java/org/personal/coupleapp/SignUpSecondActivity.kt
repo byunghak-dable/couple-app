@@ -104,7 +104,24 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 
     // TODO: 서버 연결을 통해 초대코드로 상대방과 연결하기
     private fun connectWithOpponent() {
+        Thread(Runnable {
 
+            try {
+                Log.i(TAG, "thread 시작")
+                val message = opponentCodeED.text.toString()
+                Log.i(TAG, message)
+                val socket = Socket("13.125.99.215", 20205)
+                Log.i(TAG, "소켓 연결")
+                val writer = PrintWriter(socket.getOutputStream())
+                writer.write(message)
+                writer.flush()
+                writer.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.i(TAG, "error")
+            }
+
+        }).start()
     }
 
     private class CustomHandler(activity: Activity, myInviteCode: TextView) : Handler() {
