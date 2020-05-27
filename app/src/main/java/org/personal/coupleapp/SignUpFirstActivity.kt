@@ -11,7 +11,9 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.IntegerRes
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.JsonObject
 import kotlinx.android.synthetic.main.activity_sign_up_first.*
 import org.json.JSONObject
 import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.CHECK_EMAIL_VALIDATION
@@ -21,6 +23,7 @@ import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_POSTING
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
+import java.lang.Integer.parseInt
 import java.lang.ref.WeakReference
 
 class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatcher {
@@ -28,6 +31,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
     private val TAG = javaClass.name
     private val serverPage = "SignUp"
     private lateinit var serverConnectionThread: ServerConnectionThread
+
     // utils/singleton 싱글톤 객체
     // Memo : object 는 한번만 선언 가능
     private val handlerMessageHelper = HandlerMessageHelper
@@ -78,8 +82,10 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
 
     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
     }
+
     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
     }
+
     override fun afterTextChanged(s: Editable?) {
         when (s.hashCode()) {
             // 이메일 입력 시 validation check
@@ -100,15 +106,15 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
             }
 
             // 비밀 번호 입력 시 validation check
-            passwordED.text.hashCode()  -> {
+            passwordED.text.hashCode() -> {
 
                 val regex = Regex("^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[\$@!%*#?&]).{8,15}.\$")
                 PWValidationTV.visibility = View.VISIBLE
 
-                isPasswordValid = if (s.toString().matches(regex)){
+                isPasswordValid = if (s.toString().matches(regex)) {
                     changeValidationStyle(PWValidationTV, R.string.valid, R.color.green)
                     true
-                }else {
+                } else {
                     changeValidationStyle(PWValidationTV, R.string.passwordValidation, R.color.red)
                     false
                 }
@@ -139,7 +145,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
             } else {
                 Toast.makeText(this, this.getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
             }
-        }else {
+        } else {
             Toast.makeText(this, this.getText(R.string.checkEmail), Toast.LENGTH_SHORT).show()
         }
     }
@@ -186,21 +192,17 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     }
 
                     TO_SECOND_STEP -> {
-                        val userEmail = msg.obj.toString()
+                        // 큰 따옴표를 제거하여 값 추출
+                        val userTableID = parseInt(msg.obj.toString())
+                        val toStepTwo = Intent(activity, SignUpSecondActivity::class.java)
+                        val columnKey = activity.getText(R.string.userColumnID).toString()
+                        val partnerConnection = activity.getText(R.string.partnerConnection).toString()
 
-                        if (userEmail != "") {
-                            val toStepTwo = Intent(activity, SignUpSecondActivity::class.java)
-                            val columnKey = activity.getText(R.string.userColumnID).toString()
-                            val partnerConnection = activity.getText(R.string.partnerConnection).toString()
-
-                            // sharedPreference 에 single_user(DB table)의 id 값, 파트너 연결 여부 저장
-                            preferenceHelper.setString(activity, columnKey, userEmail)
-                            preferenceHelper.setBoolean(activity, partnerConnection, false)
-                            activity.startActivity(toStepTwo)
-                            activity.finish()
-                        } else {
-                            Toast.makeText(activity, activity.getText(R.string.problem), Toast.LENGTH_SHORT).show()
-                        }
+                        // sharedPreference 에 single_user(DB table)의 id 값, 파트너 연결 여부 저장
+                        preferenceHelper.setInt(activity, columnKey, userTableID)
+                        preferenceHelper.setBoolean(activity, partnerConnection, false)
+                        activity.startActivity(toStepTwo)
+                        activity.finish()
                     }
                 }
                 // 액티비티가 destroy 되면 바로 빠져나오도록

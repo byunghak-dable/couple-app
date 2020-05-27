@@ -1,6 +1,6 @@
 package org.personal.coupleapp.utils.serverConnection
 
-import org.personal.coupleapp.data.UserData
+import org.personal.coupleapp.data.SingleUserData
 
 class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
@@ -12,8 +12,8 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
     private lateinit var hTTPConnection: HTTPConnection
 
     // TODO : 실제 데이터 handle 해야 함
-    override fun fetchFromServer(): List<UserData> {
-        val returnDataList = ArrayList<UserData>()
+    override fun fetchFromServer(): List<SingleUserData> {
+        val returnDataList = ArrayList<SingleUserData>()
         // domain 과 페이지를 통해 url 완성
         val stringUrl = serverDomain + serverPage
         hTTPConnection = HTTPConnection(stringUrl)
@@ -22,11 +22,13 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         return returnDataList
     }
 
-    // 서버에 posting 만 하는 경우 성공했는지, 실패했는지를 반환한다
+    // 서버에 posting 을 하거나 하나의 value 만을 받을 때 사용
     override fun postToServer(postJsonString: String): String {
         val stringUrl = serverDomain + serverPage
         hTTPConnection = HTTPConnection(stringUrl)
+        val jsonString = hTTPConnection.postRequest(postJsonString)
 
-        return hTTPConnection.postRequest(postJsonString)
+
+        return jsonString.replace("\"", "")
     }
 }
