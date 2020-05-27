@@ -1,6 +1,7 @@
 package org.personal.coupleapp
 
 import android.app.Activity
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -49,6 +50,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
     override fun onResume() {
         super.onResume()
 
+        // singleUserColumn id 를 preference 에서 추출해 서버로 전송
         val postJsonObject = JSONObject()
         val userColumnID = preferenceHelper.getInt(this, this.getText(R.string.userColumnID).toString())
         postJsonObject.put("what", "getInvitationCode")
@@ -82,7 +84,11 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 
     // TODO: 상대방에게 초대코드 공유하기
     private fun shareInviteCode() {
-
+        val sharingIntent = Intent(Intent.ACTION_SEND)
+        val invitationCode = myInviteCodeTV.text.toString()
+        sharingIntent.type = "text/html"
+        sharingIntent.putExtra(Intent.EXTRA_TEXT, this.getText(R.string.serverLink).toString() + "DeepLink")
+        startActivity(Intent.createChooser(sharingIntent, "sharing"))
     }
 
     // TODO: 서버 연결을 통해 초대코드로 상대방과 연결하기
@@ -97,7 +103,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         }
 
         private val activityWeak: WeakReference<Activity> = WeakReference(activity)
-        private val myInviteCodeWeak:WeakReference<TextView> = WeakReference(myInviteCode)
+        private val myInviteCodeWeak: WeakReference<TextView> = WeakReference(myInviteCode)
 
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
