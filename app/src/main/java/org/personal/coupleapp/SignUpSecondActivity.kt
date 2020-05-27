@@ -2,6 +2,7 @@ package org.personal.coupleapp
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -16,8 +17,10 @@ import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_POSTING
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import java.lang.Integer.parseInt
+import java.io.PrintWriter
+import java.lang.Exception
 import java.lang.ref.WeakReference
+import java.net.Socket
 
 class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 
@@ -33,17 +36,16 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up_second)
         setListener()
+        startWorkerThread()
     }
 
     override fun onStart() {
         super.onStart()
-        // 스레드를 onStart 에서 시작하고 onStop 에서 종료
-        startWorkerThread()
+        getDeepLinkParameter()
     }
 
-    override fun onStop() {
-        super.onStop()
-        // 스레드 종료
+    override fun onDestroy() {
+        super.onDestroy()
         stopWorkerThread()
     }
 
@@ -75,6 +77,15 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         serverConnectionThread.looper.quit()
     }
 
+    private fun getDeepLinkParameter() {
+        val uri: Uri? = intent.data
+        if (uri != null) {
+            val parameters: List<String> = uri.pathSegments
+            val opponentCode = parameters[parameters.size - 1]
+            opponentCodeED.setText(opponentCode)
+        }
+    }
+
     override fun onClick(v: View?) {
         when (v?.id) {
             R.id.shareBtn -> shareInviteCode()
@@ -87,7 +98,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         val sharingIntent = Intent(Intent.ACTION_SEND)
         val invitationCode = myInviteCodeTV.text.toString()
         sharingIntent.type = "text/html"
-        sharingIntent.putExtra(Intent.EXTRA_TEXT, this.getText(R.string.serverLink).toString() + "DeepLink")
+        sharingIntent.putExtra(Intent.EXTRA_TEXT, this.getText(R.string.serverLink).toString() + "DeepLink/" + invitationCode)
         startActivity(Intent.createChooser(sharingIntent, "sharing"))
     }
 
