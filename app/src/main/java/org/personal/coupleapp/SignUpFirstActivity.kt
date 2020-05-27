@@ -188,6 +188,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                             //TODO: step two 에서 아이디 정보 intent 로 보낼지 preference 로 저장할 지 고민 중
                             val toStepTwo = Intent(activity, SignUpSecondActivity::class.java)
                             activity.startActivity(toStepTwo)
+                            activity.finish()
                         } else {
                             Toast.makeText(activity, activity.getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
                         }
