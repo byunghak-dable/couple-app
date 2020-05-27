@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Message
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -17,7 +18,9 @@ import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.CHECK_
 import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.TO_SECOND_STEP
 import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.isEmailValid
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_POSTING
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
+import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.ref.WeakReference
 
 class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatcher {
@@ -90,7 +93,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     postJsonObject.put("what", "emailValidation")
                     postJsonObject.put("email", s.toString())
 
-                    handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), CHECK_EMAIL_VALIDATION)
+                    handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), CHECK_EMAIL_VALIDATION, REQUEST_POSTING)
                 } else {
                     changeValidationStyle(emailValidationTV, R.string.emailInValid, R.color.red)
                 }
@@ -132,7 +135,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                 postJSONObject.put("email", email)
                 postJSONObject.put("password", password)
 
-                handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP)
+                handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP, REQUEST_POSTING)
             } else {
                 Toast.makeText(this, this.getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
             }
@@ -157,6 +160,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
 
         private val activityWeakReference: WeakReference<Activity> = WeakReference(activity)
         private val textViewWeakReference: WeakReference<TextView> = WeakReference(emailValidationTV)
+        private val preferenceHelper = SharedPreferenceHelper
 
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
@@ -182,14 +186,20 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     }
 
                     TO_SECOND_STEP -> {
-                        val isUploadSuccess = msg.obj.toString()
-                        if (isUploadSuccess == "true") {
-                            //TODO: step two 에서 아이디 정보 intent 로 보낼지 preference 로 저장할 지 고민 중
+                        val userEmail = msg.obj.toString()
+
+                        if (userEmail != "") {
                             val toStepTwo = Intent(activity, SignUpSecondActivity::class.java)
+                            val columnKey = activity.getText(R.string.userColumnID).toString()
+                            val partnerConnection = activity.getText(R.string.partnerConnection).toString()
+
+                            // sharedPreference 에 single_user(DB table)의 id 값, 파트너 연결 여부 저장
+                            preferenceHelper.setString(activity, columnKey, userEmail)
+                            preferenceHelper.setBoolean(activity, partnerConnection, false)
                             activity.startActivity(toStepTwo)
                             activity.finish()
                         } else {
-                            Toast.makeText(activity, activity.getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(activity, activity.getText(R.string.problem), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
