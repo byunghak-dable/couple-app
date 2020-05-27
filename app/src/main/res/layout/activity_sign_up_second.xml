@@ -6,17 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".SignUpSecondActivity">
 
-    <!--    뒤로가기 버튼 -->
-    <ImageView
-        android:id="@+id/backBtnIV"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:padding="5dp"
-        android:src="@drawable/ic_arrow_back_black_24dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <!--    제목 : 회원가입 -->
     <TextView
         android:id="@+id/signUpTV"
