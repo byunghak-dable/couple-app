@@ -13,7 +13,16 @@
         android:theme="@style/AppTheme.NoActionBar"
         android:usesCleartextTraffic="true">
 
-        <activity android:name=".SignUpSecondActivity"/>
+        <activity android:name=".SignUpSecondActivity">
+            <intent-filter >
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http"
+                    android:host="@string/serverDomain"
+                    android:pathPrefix="/DeepLink" />
+            </intent-filter>
+        </activity>
         <activity android:name=".SignUpFirstActivity" />
         <activity android:name=".BoardActivity" />
         <activity android:name=".SignInActivity" />
