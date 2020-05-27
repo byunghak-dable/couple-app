@@ -7,7 +7,6 @@ import android.os.Handler
 import android.os.Message
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -100,7 +99,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
             // 비밀 번호 입력 시 validation check
             passwordED.text.hashCode()  -> {
 
-                val regex = Regex("^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[\$@\$!%*#?&]).{8,15}.\$")
+                val regex = Regex("^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[\$@!%*#?&]).{8,15}.\$")
                 PWValidationTV.visibility = View.VISIBLE
 
                 isPasswordValid = if (s.toString().matches(regex)){
