@@ -7,17 +7,17 @@ import android.view.MenuItem
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
 
-class MainOtherStoryActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
+class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main_other_story)
+        setContentView(R.layout.activity_main_album)
         setListener()
     }
 
     override fun onStart() {
         super.onStart()
-        bottomNavigation.selectedItemId = R.id.otherStory
+        bottomNavigation.selectedItemId = R.id.album
     }
 
     private fun setListener() {
@@ -28,7 +28,7 @@ class MainOtherStoryActivity : AppCompatActivity(), BottomNavigationView.OnNavig
         when (item.itemId) {
             R.id.home -> toHome()
             R.id.chat -> toChat()
-            R.id.map -> toMap()
+            R.id.notice -> toNotice()
             R.id.more -> toMore()
         }
         overridePendingTransition(0, 0)
@@ -47,8 +47,8 @@ class MainOtherStoryActivity : AppCompatActivity(), BottomNavigationView.OnNavig
         startActivity(toChat)
     }
 
-    private fun toMap() {
-        val toMap = Intent(this, MainMapActivity::class.java)
+    private fun toNotice() {
+        val toMap = Intent(this, MainNoticeActivity::class.java)
         startActivity(toMap)
     }
 
