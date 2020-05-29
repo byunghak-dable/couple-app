@@ -15,10 +15,12 @@ class AlertDialog : DialogFragment(), DialogInterface.OnClickListener {
     private val TAG = javaClass.name
 
     private lateinit var dialogListener: DialogListener
+    // 확인, 취소 버튼 구분하기 위한 변수
     private val confirmID: Int by lazy { -1 }
     private val cancelID: Int by lazy { -2 }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        // 제목과 메시지는 액티비티에서 보낸 정보로 다이얼로그 구성
         val title = arguments!!.getString("title")
         val message = arguments!!.getString("message")
         val builder = AlertDialog.Builder(activity)
@@ -37,6 +39,7 @@ class AlertDialog : DialogFragment(), DialogInterface.OnClickListener {
         }
     }
 
+    // 다이얼로그에서 액티비티로 확인 버튼 눌렀을 때 알려줌
     override fun onAttach(context: Context) {
         super.onAttach(context)
         try {
