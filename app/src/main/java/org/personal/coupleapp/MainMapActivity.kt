@@ -12,11 +12,15 @@ class MainMapActivity : AppCompatActivity(), BottomNavigationView.OnNavigationIt
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_map)
-        navigationControl()
+        setListener()
     }
 
-    private fun navigationControl() {
+    override fun onStart() {
+        super.onStart()
         bottomNavigation.selectedItemId = R.id.map
+    }
+
+    private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
     }
 

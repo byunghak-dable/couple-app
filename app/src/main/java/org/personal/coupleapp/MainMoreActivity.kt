@@ -12,11 +12,15 @@ class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_more)
-        navigationControl();
+        setListener()
     }
 
-    private fun navigationControl() {
+    override fun onStart() {
+        super.onStart()
         bottomNavigation.selectedItemId = R.id.more
+    }
+
+    private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
     }
 

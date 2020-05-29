@@ -12,11 +12,15 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_chat)
-        navigationControl()
+        setListener()
     }
 
-    private fun navigationControl() {
+    override fun onStart() {
+        super.onStart()
         bottomNavigation.selectedItemId = R.id.chat
+    }
+
+    private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
     }
 
