@@ -34,6 +34,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i("thread-test", "onCreate")
         setContentView(R.layout.activity_sign_up_second)
         setListener()
         startWorkerThread()
@@ -41,25 +42,23 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onStart() {
         super.onStart()
+        Log.i("thread-test", "onStart")
         getDeepLinkParameter()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        stopWorkerThread()
     }
 
     override fun onResume() {
         super.onResume()
-
-        // singleUserColumn id 를 preference 에서 추출해 서버로 전송
-        val postJsonObject = JSONObject()
-        val userColumnID = preferenceHelper.getInt(this, this.getText(R.string.userColumnID).toString())
-        postJsonObject.put("what", "getInvitationCode")
-        postJsonObject.put("singleUserID", userColumnID)
-        handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_POSTING)
+        Log.i("thread-test", "onResume")
+        getInviteCode()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.i("thread-test", "onDestroy")
+        stopWorkerThread()
+    }
+
+    //------------------ 액티비티 생명주기 콜백 메소드에서 호출할 메소드 모음 ------------------
     private fun setListener() {
         shareBtn.setOnClickListener(this)
         connectBtn.setOnClickListener(this)
@@ -74,7 +73,19 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 
     // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
     private fun stopWorkerThread() {
+        Log.i(TAG, "thread 종료")
         serverConnectionThread.looper.quit()
+    }
+
+    private fun getInviteCode() {
+        // singleUserColumn id 를 preference 에서 추출해 서버로 전송
+        val postJsonObject = JSONObject()
+        val userColumnID = preferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
+        postJsonObject.put("what", "getInvitationCode")
+        postJsonObject.put("singleUserID", userColumnID)
+        handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_POSTING)
+        Log.i(TAG, "초대코드 서버로부터 받아오는 요청 보냄")
+        Log.i("thread-test", "onResume 끝")
     }
 
     private fun getDeepLinkParameter() {
@@ -86,6 +97,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
+    //------------------ 클릭 시 이벤트 관리하는 메소드 모음 ------------------
     override fun onClick(v: View?) {
         when (v?.id) {
             R.id.shareBtn -> shareInviteCode()
@@ -98,32 +110,33 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         val sharingIntent = Intent(Intent.ACTION_SEND)
         val invitationCode = myInviteCodeTV.text.toString()
         sharingIntent.type = "text/html"
-        sharingIntent.putExtra(Intent.EXTRA_TEXT, this.getText(R.string.serverLink).toString() + "DeepLink/" + invitationCode)
+        sharingIntent.putExtra(Intent.EXTRA_TEXT, getText(R.string.serverLink).toString() + "DeepLink/" + invitationCode)
         startActivity(Intent.createChooser(sharingIntent, "sharing"))
     }
 
     // TODO: 서버 연결을 통해 초대코드로 상대방과 연결하기
     private fun connectWithOpponent() {
-        Thread(Runnable {
-
-            try {
-                Log.i(TAG, "thread 시작")
-                val message = opponentCodeED.text.toString()
-                Log.i(TAG, message)
-                val socket = Socket("13.125.99.215", 20205)
-                Log.i(TAG, "소켓 연결")
-                val writer = PrintWriter(socket.getOutputStream())
-                writer.write(message)
-                writer.flush()
-                writer.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.i(TAG, "error")
-            }
-
-        }).start()
+//        Thread(Runnable {
+//
+//            try {
+//                Log.i(TAG, "thread 시작")
+//                val message = opponentCodeED.text.toString()
+//                Log.i(TAG, message)
+//                val socket = Socket("13.125.99.215", 20205)
+//                Log.i(TAG, "소켓 연결")
+//                val writer = PrintWriter(socket.getOutputStream())
+//                writer.write(message)
+//                writer.flush()
+//                writer.close()
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                Log.i(TAG, "error")
+//            }
+//
+//        }).start()
     }
 
+    // 초대 코드를 받아오고,
     private class CustomHandler(activity: Activity, myInviteCode: TextView) : Handler() {
 
         companion object {
