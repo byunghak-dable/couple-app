@@ -7,17 +7,17 @@ import android.view.MenuItem
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
 
-class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
+class MainOtherStoryActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main_album)
+        setContentView(R.layout.activity_main_other_story)
         setListener()
     }
 
     override fun onStart() {
         super.onStart()
-        bottomNavigation.selectedItemId = R.id.album
+        bottomNavigation.selectedItemId = R.id.otherStory
     }
 
     private fun setListener() {

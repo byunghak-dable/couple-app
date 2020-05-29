@@ -19,6 +19,7 @@
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_marginTop="5dp"
+            android:contentDescription="@string/profileImage"
             android:padding="5dp"
             android:src="@drawable/ic_error_outline_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/imageSliderIS"
@@ -40,7 +41,7 @@
         <com.denzcoskun.imageslider.ImageSlider
             android:id="@+id/imageSliderIS"
             android:layout_width="match_parent"
-            android:layout_height="300dp"
+            android:layout_height="250dp"
             android:layout_marginTop="10dp"
             app:corner_radius="5"
             app:delay="0"
@@ -50,16 +51,16 @@
             app:layout_constraintTop_toBottomOf="@id/profileImageIV"
             app:period="1000"
             app:placeholder="@drawable/ic_image_black_24dp" />
-        
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:layout_marginBottom="10dp"
             android:text="description"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/imageSliderIS"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintTop_toBottomOf="@+id/imageSliderIS" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>
