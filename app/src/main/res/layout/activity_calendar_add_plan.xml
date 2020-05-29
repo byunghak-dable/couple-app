@@ -69,6 +69,10 @@
         android:id="@+id/publicTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingStart="40dp"
+        android:paddingTop="5dp"
+        android:paddingEnd="40dp"
+        android:paddingBottom="5dp"
         android:text="@string/openPublic"
         android:textColor="@color/mainBackground"
         android:textSize="16sp"
@@ -81,9 +85,13 @@
         android:id="@+id/privateTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingStart="40dp"
+        android:paddingTop="5dp"
+        android:paddingEnd="40dp"
+        android:paddingBottom="5dp"
         android:text="@string/openPrivate"
-        android:textSize="16sp"
         android:textColor="@color/black"
+        android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="@id/classificationBarIV"
         app:layout_constraintLeft_toRightOf="@id/publicTV"
         app:layout_constraintRight_toRightOf="parent"
@@ -156,8 +164,8 @@
                 android:id="@+id/memoImageIV"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_create_black_24dp"
                 android:contentDescription="@string/publicOrNot"
+                android:src="@drawable/ic_create_black_24dp"
                 app:layout_constraintBottom_toBottomOf="@id/memoED"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toLeftOf="@id/memoED"
@@ -271,7 +279,6 @@
                 android:paddingEnd="10dp"
                 android:paddingBottom="13dp"
                 android:text="@string/dateDummy"
-                android:textAlignment="textEnd"
                 android:textSize="15sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toTopOf="@+id/endDateBtn"
@@ -294,7 +301,6 @@
                 android:paddingEnd="10dp"
                 android:paddingBottom="13dp"
                 android:text="@string/time"
-                android:textAlignment="textEnd"
                 android:textSize="15sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toTopOf="@+id/endTimeBtn"
@@ -326,13 +332,11 @@
                 android:paddingEnd="10dp"
                 android:paddingBottom="13dp"
                 android:text="@string/dateDummy"
-                android:textAlignment="textEnd"
                 android:textSize="15sp"
                 android:textStyle="bold"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toLeftOf="@+id/endTimeBtn"
-                app:layout_constraintTop_toBottomOf="@id/startDateBtn"
-                />
+                app:layout_constraintTop_toBottomOf="@id/startDateBtn" />
 
             <Button
                 android:id="@+id/endTimeBtn"
@@ -347,7 +351,6 @@
                 android:paddingEnd="10dp"
                 android:paddingBottom="13dp"
                 android:text="@string/time"
-                android:textAlignment="textEnd"
                 android:textSize="15sp"
                 android:textStyle="bold"
                 app:layout_constraintLeft_toRightOf="@+id/endDateBtn"
@@ -381,10 +384,10 @@
                 android:textAlignment="textEnd"
                 android:textSize="15sp"
                 android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@id/notificationBtn"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/endDateBtn"
-                app:layout_constraintBottom_toTopOf="@id/alarmBtn"/>
+                app:layout_constraintTop_toBottomOf="@+id/endDateBtn" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -397,7 +400,7 @@
                 app:layout_constraintTop_toTopOf="@+id/repeatBtn" />
 
             <Button
-                android:id="@+id/alarmBtn"
+                android:id="@+id/notificationBtn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="100dp"
@@ -422,10 +425,10 @@
                 android:layout_height="wrap_content"
                 android:text="@string/alarm"
                 android:textSize="15sp"
-                app:layout_constraintBottom_toBottomOf="@id/alarmBtn"
+                app:layout_constraintBottom_toBottomOf="@id/notificationBtn"
                 app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toLeftOf="@+id/alarmBtn"
-                app:layout_constraintTop_toTopOf="@+id/alarmBtn" />
+                app:layout_constraintRight_toLeftOf="@+id/notificationBtn"
+                app:layout_constraintTop_toTopOf="@+id/notificationBtn" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
