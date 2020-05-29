@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="5dp"
+    android:paddingEnd="5dp"
+    android:paddingTop="15dp"
+    android:paddingBottom="15dp">
+
+    <TextView
+        android:id="@+id/dateBtn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="?attr/selectableItemBackground"
+        android:padding="15dp"
+        android:paddingStart="60dp"
+        android:paddingEnd="50dp"
+        android:text="@string/dateWithPartner"
+        android:textAlignment="textStart"
+        android:textColor="@color/black"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/travelBtn"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/dataIV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/shape_btn_circle_20dp"
+        android:backgroundTint="@color/mainBackground"
+        android:elevation="5dp"
+        android:padding="5dp"
+        android:src="@drawable/ic_favorite_black_24dp"
+        app:layout_constraintBottom_toBottomOf="@id/dateBtn"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dateBtn" />
+
+
+    <TextView
+        android:id="@+id/travelBtn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:background="?attr/selectableItemBackground"
+        android:padding="15dp"
+        android:paddingStart="60dp"
+        android:paddingEnd="50dp"
+        android:text="@string/travel"
+        android:textAlignment="textStart"
+        android:textColor="@color/black"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/cultureLifeBtn"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dateBtn" />
+
+    <ImageView
+        android:id="@+id/travelIV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/shape_btn_circle_20dp"
+        android:backgroundTint="@color/mainBackground"
+        android:elevation="5dp"
+        android:padding="5dp"
+        android:src="@drawable/ic_airplanemode_active_black_24dp"
+        app:layout_constraintBottom_toBottomOf="@id/travelBtn"
+        app:layout_constraintLeft_toLeftOf="@id/travelBtn"
+        app:layout_constraintTop_toTopOf="@id/travelBtn" />
+
+    <TextView
+        android:id="@+id/cultureLifeBtn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:background="?attr/selectableItemBackground"
+        android:padding="15dp"
+        android:paddingStart="60dp"
+        android:paddingEnd="50dp"
+        android:text="@string/cultureLife"
+        android:textAlignment="textStart"
+        android:textColor="@color/black"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/schoolBtn"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/travelBtn" />
+
+    <ImageView
+        android:id="@+id/cultureLifeIV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/shape_btn_circle_20dp"
+        android:backgroundTint="@color/mainBackground"
+        android:elevation="5dp"
+        android:padding="5dp"
+        android:src="@drawable/ic_music_note_black_24dp"
+        app:layout_constraintBottom_toBottomOf="@id/cultureLifeBtn"
+        app:layout_constraintLeft_toLeftOf="@id/cultureLifeBtn"
+        app:layout_constraintTop_toTopOf="@id/cultureLifeBtn" />
+
+    <TextView
+        android:id="@+id/schoolBtn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:background="?attr/selectableItemBackground"
+        android:padding="15dp"
+        android:paddingStart="60dp"
+        android:paddingEnd="50dp"
+        android:text="@string/school"
+        android:textAlignment="textStart"
+        android:textColor="@color/black"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/otherBtn"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cultureLifeBtn" />
+
+    <ImageView
+        android:id="@+id/schoolIV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/shape_btn_circle_20dp"
+        android:backgroundTint="@color/mainBackground"
+        android:elevation="5dp"
+        android:padding="5dp"
+        android:src="@drawable/ic_school_black_24dp"
+        app:layout_constraintBottom_toBottomOf="@id/schoolBtn"
+        app:layout_constraintLeft_toLeftOf="@id/schoolBtn"
+        app:layout_constraintTop_toTopOf="@id/schoolBtn" />
+
+    <TextView
+        android:id="@+id/otherBtn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:background="?attr/selectableItemBackground"
+        android:padding="15dp"
+        android:paddingStart="60dp"
+        android:paddingEnd="50dp"
+        android:text="@string/other"
+        android:textAlignment="textStart"
+        android:textColor="@color/black"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/schoolBtn" />
+
+    <ImageView
+        android:id="@+id/otherIV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/shape_btn_circle_20dp"
+        android:backgroundTint="@color/mainBackground"
+        android:elevation="5dp"
+        android:padding="5dp"
+        android:src="@drawable/ic_menu_black_24dp"
+        app:layout_constraintBottom_toBottomOf="@id/otherBtn"
+        app:layout_constraintLeft_toLeftOf="@id/otherBtn"
+        app:layout_constraintTop_toTopOf="@id/otherBtn" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
