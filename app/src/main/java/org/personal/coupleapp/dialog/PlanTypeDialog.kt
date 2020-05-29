@@ -16,7 +16,6 @@ class PlanTypeDialog : DialogFragment(), View.OnClickListener {
     private val TAG = javaClass.name
 
     private lateinit var dialogListener: DialogListener
-    private lateinit var planType: String
 
     @SuppressLint("InflateParams")
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
