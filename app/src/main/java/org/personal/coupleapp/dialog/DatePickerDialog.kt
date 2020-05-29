@@ -46,10 +46,10 @@ class DatePickerDialog : DialogFragment(), DatePickerDialog.OnDateSetListener {
     }
 
     override fun onDateSet(view: DatePicker?, year: Int, month: Int, dayOfMonth: Int) {
-        datePickerListener.applyDateSet(view, year, month, dayOfMonth, whichPicker)
+        datePickerListener.onDateSet(view, year, month, dayOfMonth, whichPicker)
     }
 
     interface DatePickerListener {
-        fun applyDateSet(view: DatePicker?, year: Int, month: Int, dayOfMonth: Int, whichPicker: String?)
+        fun onDateSet(view: DatePicker?, year: Int, month: Int, dayOfMonth: Int, whichPicker: String?)
     }
 }
