@@ -120,7 +120,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
 
     // 사용자에게 이메일, 비밀번호 유효성 검사 결과를 알려주는 TextView 스타일 변경
     private fun changeValidationStyle(textView: TextView, text: Int, color: Int) {
-        textView.text = this.getText(text)
+        textView.text = getText(text)
         textView.setTextColor(this.getColor(color))
     }
 
@@ -139,10 +139,10 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
 
                 handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP, REQUEST_POSTING)
             } else {
-                Toast.makeText(this, this.getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
             }
         } else {
-            Toast.makeText(this, this.getText(R.string.checkEmail), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getText(R.string.checkEmail), Toast.LENGTH_SHORT).show()
         }
     }
 
