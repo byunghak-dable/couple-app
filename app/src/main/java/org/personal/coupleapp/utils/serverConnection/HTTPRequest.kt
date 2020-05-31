@@ -1,5 +1,6 @@
 package org.personal.coupleapp.utils.serverConnection
 
+import com.google.gson.Gson
 import org.personal.coupleapp.data.SingleUserData
 
 class HTTPRequest(private val serverPage: String) : HTTPOutPut {
