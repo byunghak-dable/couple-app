@@ -4,20 +4,28 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
+import kotlinx.android.synthetic.main.activity_main_home.bottomNavigation
+import kotlinx.android.synthetic.main.activity_main_more.*
 
-class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
+class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_more)
-        navigationControl();
+        setListener()
     }
 
-    private fun navigationControl() {
+    override fun onStart() {
+        super.onStart()
         bottomNavigation.selectedItemId = R.id.more
+    }
+
+    private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
+        mapIV.setOnClickListener(this)
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -25,7 +33,7 @@ class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
             R.id.home -> toHome()
             R.id.chat -> toChat()
             R.id.album -> toAlbum()
-            R.id.map -> toMap()
+            R.id.notice -> toNotice()
         }
         overridePendingTransition(0, 0)
         return true
@@ -48,8 +56,19 @@ class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startActivity(toAlbum)
     }
 
+    private fun toNotice() {
+        val toMap = Intent(this, MainNoticeActivity::class.java)
+        startActivity(toMap)
+    }
+
+    override fun onClick(v: View?) {
+        when(v?.id) {
+            R.id.mapIV -> toMap()
+        }
+    }
+
     private fun toMap() {
-        val toMap = Intent(this, MainMapActivity::class.java)
+        val toMap = Intent(this, MapActivity::class.java)
         startActivity(toMap)
     }
 }
