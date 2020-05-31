@@ -4,10 +4,12 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import kotlinx.android.synthetic.main.activity_main_home.*
+import kotlinx.android.synthetic.main.activity_main_chat.*
+import kotlinx.android.synthetic.main.activity_main_home.bottomNavigation
 
-class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
+class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,13 +24,14 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
 
     private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
+        partnerTV.setOnClickListener(this)
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.home -> toHome()
             R.id.album -> toAlbum()
-            R.id.map -> toMap()
+            R.id.notice -> toNotice()
             R.id.more -> toMore()
         }
         overridePendingTransition(0, 0)
@@ -47,13 +50,25 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startActivity(toAlbum)
     }
 
-    private fun toMap() {
-        val toMap = Intent(this, MainMapActivity::class.java)
+    private fun toNotice() {
+        val toMap = Intent(this, MainNoticeActivity::class.java)
         startActivity(toMap)
     }
 
     private fun toMore() {
         val toMore = Intent(this, MainMoreActivity::class.java)
         startActivity(toMore)
+    }
+
+    //------------------ 클릭 시 이벤트 관리하는 메소드 모음 ------------------
+    override fun onClick(v: View?) {
+        when(v?.id) {
+            R.id.partnerTV -> toPartnerChatting()
+        }
+    }
+
+    private fun toPartnerChatting() {
+        val toPartnerChatting = Intent(this, ChattingActivity::class.java)
+        startActivity(toPartnerChatting)
     }
 }
