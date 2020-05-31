@@ -13,24 +13,20 @@ import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_sign_up_second.*
 import org.json.JSONObject
 import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.GET_INVITE_CODE
+import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.SIGN_UP_COMPLETED
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_POSTING
+import org.personal.coupleapp.dialog.CustomAlertDialog
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import java.io.PrintWriter
-import java.lang.Exception
+import java.lang.Integer.parseInt
 import java.lang.ref.WeakReference
-import java.net.Socket
 
 class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 
     private val TAG = javaClass.name
     private val serverPage = "ConnectPartner"
     private lateinit var serverConnectionThread: ServerConnectionThread
-
-    // utils/singleton 싱글톤 객체
-    private val handlerMessageHelper = HandlerMessageHelper
-    private val preferenceHelper = SharedPreferenceHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,10 +76,12 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
     private fun getInviteCode() {
         // singleUserColumn id 를 preference 에서 추출해 서버로 전송
         val postJsonObject = JSONObject()
-        val userColumnID = preferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
+        val userColumnID = SharedPreferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
+
         postJsonObject.put("what", "getInvitationCode")
         postJsonObject.put("singleUserID", userColumnID)
-        handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_POSTING)
+
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_POSTING)
         Log.i(TAG, "초대코드 서버로부터 받아오는 요청 보냄")
         Log.i("thread-test", "onResume 끝")
     }
@@ -105,7 +103,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    // TODO: 상대방에게 초대코드 공유하기
+    // 상대방에게 초대코드 공유하기
     private fun shareInviteCode() {
         val sharingIntent = Intent(Intent.ACTION_SEND)
         val invitationCode = myInviteCodeTV.text.toString()
@@ -114,8 +112,76 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         startActivity(Intent.createChooser(sharingIntent, "sharing"))
     }
 
-    // TODO: 서버 연결을 통해 초대코드로 상대방과 연결하기
+    // 서버 연결을 통해 초대코드로 상대방과 연결하기
     private fun connectWithOpponent() {
+        val jsonObject = JSONObject()
+        val invitationSenderID =  SharedPreferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
+
+        jsonObject.put("what", "connectToPartner")
+        jsonObject.put("invitationSenderID", invitationSenderID)
+        jsonObject.put("invitationReceiverCode", parseInt(opponentCodeED.text.toString()))
+
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), SIGN_UP_COMPLETED, REQUEST_POSTING)
+        Log.i(TAG, "커플 DB에 업로드")
+    }
+
+    // 초대 코드를 받아오고,
+    private class CustomHandler(activity: AppCompatActivity, myInviteCode: TextView) : Handler() {
+
+        companion object {
+            const val GET_INVITE_CODE = 1
+            const val SIGN_UP_COMPLETED = 2
+        }
+
+        private val activityWeak: WeakReference<AppCompatActivity> = WeakReference(activity)
+        private val myInviteCodeWeak: WeakReference<TextView> = WeakReference(myInviteCode)
+
+        override fun handleMessage(msg: Message) {
+            super.handleMessage(msg)
+
+            val activity = activityWeak.get()
+            val myInviteCode = myInviteCodeWeak.get()
+
+            // 액티비티가 destroy 되지 않았을 때
+            if (activity != null) {
+                when (msg.what) {
+                    GET_INVITE_CODE -> {
+                        val invitationCode = msg.obj.toString()
+                        myInviteCode?.text = invitationCode
+                    }
+
+                    //TODO: 회원 가입 2단계 완료
+                    SIGN_UP_COMPLETED -> {
+                        when (msg.obj.toString()) {
+                            "true" -> {
+                                val toHome = Intent(activity, MainHomeActivity::class.java)
+
+//                                SharedPreferenceHelper.setInt(activity, activity.getText(R.string.coupleColumnID).toString(), )
+
+                            }
+
+                            "false" -> {
+                                val alertDialog = CustomAlertDialog()
+                                val arguments = Bundle()
+
+                                arguments.putString("title", "알림창")
+                                arguments.putString("message", "상대방 코드를 확인해주세요")
+
+                                alertDialog.arguments = arguments
+                                alertDialog.show(activity.supportFragmentManager, "WrongOpponentCode")
+                            }
+                        }
+                    }
+                }
+                // 액티비티가 destroy 되면 바로 빠져나오도록
+            } else {
+                return
+            }
+        }
+    }
+}
+
+// 소켓 사용 해보기
 //        Thread(Runnable {
 //
 //            try {
@@ -134,36 +200,3 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 //            }
 //
 //        }).start()
-    }
-
-    // 초대 코드를 받아오고,
-    private class CustomHandler(activity: Activity, myInviteCode: TextView) : Handler() {
-
-        companion object {
-            const val GET_INVITE_CODE = 1
-        }
-
-        private val activityWeak: WeakReference<Activity> = WeakReference(activity)
-        private val myInviteCodeWeak: WeakReference<TextView> = WeakReference(myInviteCode)
-
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            val activity = activityWeak.get()
-            val myInviteCode = myInviteCodeWeak.get()
-
-            // 액티비티가 destroy 되지 않았을 때
-            if (activity != null) {
-                when (msg.what) {
-                    GET_INVITE_CODE -> {
-                        val invitationCode = msg.obj.toString()
-                        myInviteCode?.text = invitationCode
-                    }
-                }
-                // 액티비티가 destroy 되면 바로 빠져나오도록
-            } else {
-                return
-            }
-        }
-    }
-}
