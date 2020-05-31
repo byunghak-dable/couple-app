@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".StoryActivity">
+
+    <TextView
+        android:id="@+id/topBarTV"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/mainBackground"
+        android:contentDescription="@string/background"
+        android:gravity="center|start"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:text="@string/story"
+        android:textColor="@color/black"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!--    일정 추가 버튼-->
+    <ImageButton
+        android:contentDescription="@string/story"
+        android:id="@+id/addPlanBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:background="@color/transparency"
+        android:src="@drawable/ic_add_circle_outline_black_40dp"
+        app:layout_constraintBottom_toBottomOf="@id/topBarTV"
+        app:layout_constraintRight_toRightOf="@id/topBarTV"
+        app:layout_constraintTop_toTopOf="@id/topBarTV" />
+
+    <ImageView
+        android:id="@+id/senderProfileIV"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="40dp"
+        android:contentDescription="@string/profileImage"
+        android:src="@drawable/ic_person_add_black_40dp"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/receiverProfileIV"
+        app:layout_constraintTop_toBottomOf="@id/topBarTV" />
+
+    <TextView
+        android:id="@+id/senderNameTV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="@string/name"
+        app:layout_constraintLeft_toLeftOf="@+id/senderProfileIV"
+        app:layout_constraintRight_toRightOf="@id/senderProfileIV"
+        app:layout_constraintTop_toBottomOf="@id/senderProfileIV" />
+
+    <ImageView
+        android:id="@+id/receiverProfileIV"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="50dp"
+        android:contentDescription="@string/profileImage"
+        android:src="@drawable/ic_person_add_black_40dp"
+        app:layout_constraintLeft_toRightOf="@+id/senderProfileIV"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topBarTV" />
+
+
+    <TextView
+        android:id="@+id/receiverNameTV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="@string/name"
+        app:layout_constraintLeft_toLeftOf="@+id/receiverProfileIV"
+        app:layout_constraintRight_toRightOf="@id/receiverProfileIV"
+        app:layout_constraintTop_toBottomOf="@id/receiverProfileIV" />
+
+    <!--    TODO: 글자 수 많을 때... 제대로 적용하기-->
+    <TextView
+        android:id="@+id/storyDescriptionTV"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="140dp"
+        android:layout_marginEnd="50dp"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:text="@string/goBackMessage"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topBarTV" />
+
+    <!--    그리드 뷰로 (인스타 그램 프로필과 비슷한 컨셉)-->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/storyRV"
+        android:layout_width="0dp"
+        android:layout_marginTop="20dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/storyDescriptionTV" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
