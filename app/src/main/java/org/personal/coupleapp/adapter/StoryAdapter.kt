@@ -17,7 +17,7 @@ class StoryAdapter(private val storyList: ArrayList<StoryData>, private val item
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StoryAdapter.ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.itme_story, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.itme_home_story, parent, false)
         return ViewHolder(view, itemClickListener)
     }
 
