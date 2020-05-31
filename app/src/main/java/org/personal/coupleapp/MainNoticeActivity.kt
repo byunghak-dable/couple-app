@@ -7,16 +7,20 @@ import android.view.MenuItem
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
 
-class MainMapActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
+class MainNoticeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main_map)
-        navigationControl()
+        setContentView(R.layout.activity_main_notice)
+        setListener()
     }
 
-    private fun navigationControl() {
-        bottomNavigation.selectedItemId = R.id.map
+    override fun onStart() {
+        super.onStart()
+        bottomNavigation.selectedItemId = R.id.notice
+    }
+
+    private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
     }
 

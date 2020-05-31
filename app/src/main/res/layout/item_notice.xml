@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="5dp"
+    android:layout_marginTop="5dp"
+    android:layout_marginEnd="5dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="7dp">
+
+        <ImageView
+            android:id="@+id/profileImageIV"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/profileImage"
+            android:padding="5dp"
+            android:src="@drawable/ic_error_outline_black_24dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/descriptionTV"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/descriptionTV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:paddingStart="5dp"
+            android:maxLines="2"
+            android:paddingBottom="5dp"
+            android:paddingEnd="5dp"
+            android:text="@string/message"
+            app:layout_constraintLeft_toRightOf="@id/profileImageIV"
+            app:layout_constraintBottom_toTopOf="@id/whenTV"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/whenTV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="date"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
+            android:textSize="12sp"
+            app:layout_constraintLeft_toLeftOf="@id/descriptionTV"
+            app:layout_constraintTop_toBottomOf="@+id/descriptionTV" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

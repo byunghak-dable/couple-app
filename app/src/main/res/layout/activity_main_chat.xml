@@ -4,18 +4,141 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/grey"
     tools:context=".MainChatActivity">
+
+    <!--    상단 바 : 액티비티 설명 혹은 액션 버튼이 들어감-->
+    <TextView
+        android:id="@+id/topBarTV"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/mainBackground"
+        android:contentDescription="@string/background"
+        android:gravity="center|start"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:text="@string/chat"
+        android:textColor="@color/black"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/sectionCoupleTV"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/addFriendsCoupleIB"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:background="@color/transparency"
+        android:contentDescription="@string/uploadBtn"
+        android:src="@drawable/ic_person_add_black_40dp"
+        app:layout_constraintBottom_toBottomOf="@id/topBarTV"
+        app:layout_constraintRight_toRightOf="@id/topBarTV"
+        app:layout_constraintTop_toTopOf="@id/topBarTV" />
+
+    <TextView
+        android:id="@+id/sectionCoupleTV"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:paddingStart="10dp"
+        android:paddingTop="5dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="5dp"
+        android:text="@string/couple"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/partnerTV"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topBarTV" />
+
+    <TextView
+        android:id="@+id/partnerTV"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:background="@color/white"
+        android:gravity="start"
+        android:paddingStart="60dp"
+        android:paddingTop="5dp"
+        android:paddingEnd="60dp"
+        android:paddingBottom="5dp"
+        android:text="@string/name"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sectionCoupleTV" />
+
+    <TextView
+        android:id="@+id/messageTV"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="80dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/message"
+        app:layout_constraintBottom_toBottomOf="@id/partnerTV"
+        app:layout_constraintLeft_toLeftOf="@id/partnerTV"
+        app:layout_constraintRight_toRightOf="@id/partnerTV"
+        app:layout_constraintTop_toTopOf="@id/partnerTV" />
+
+    <ImageView
+        android:contentDescription="@string/profileImage"
+        android:id="@+id/profileImageIV"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/shape_rounded"
+        android:backgroundTint="@color/white"
+        android:src="@drawable/ic_person_add_black_40dp"
+        app:layout_constraintBottom_toBottomOf="@id/partnerTV"
+        app:layout_constraintLeft_toLeftOf="@id/partnerTV"
+        app:layout_constraintTop_toTopOf="@id/partnerTV" />
+
+    <TextView
+        android:id="@+id/sectionFriendsTV"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@color/white"
+        android:gravity="center|start"
+        android:paddingStart="10dp"
+        android:paddingTop="5dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="5dp"
+        android:text="@string/friendsCouple"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/friendsCouplesRV"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/partnerTV" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/friendsCouplesRV"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
+        app:layout_constraintLeft_toLeftOf="@id/partnerTV"
+        app:layout_constraintRight_toRightOf="@id/partnerTV"
+        app:layout_constraintTop_toBottomOf="@id/sectionFriendsTV" />
+
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:menu="@menu/menu_navigation"
         app:itemBackground="@color/mainBackground"
         app:itemTextColor="@drawable/navigation_selector"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        />
+        app:menu="@menu/menu_navigation" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

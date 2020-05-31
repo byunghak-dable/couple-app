@@ -9,5 +9,8 @@
     <color name="editBackground">#dcdc</color>
     <color name="red">#FF0000</color>
     <color name="green">#3DEC55</color>
+    <color name="grey">#dcdcdc</color>
+    <color name="transparency">#00ff0000</color>
+    <color name="lightGrey">#EEEEEE</color>
 <!--    <color name="btnBackground">#B7E3E4</color>-->
 </resources>

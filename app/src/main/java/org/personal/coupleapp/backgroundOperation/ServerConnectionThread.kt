@@ -4,11 +4,12 @@ import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
+import android.util.Log
 import org.personal.coupleapp.utils.serverConnection.HTTPRequest
 
 class ServerConnectionThread(name: String?, private val mainHandler: Handler) : HandlerThread(name) {
 
-    // msg.what 의 value 값 선언
+    // msg.what, msg.arg1 의 value 값 선언
     companion object {
         const val FETCH_DATA = 1
         const val POST_DATA = 2
@@ -21,6 +22,8 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
 
     @SuppressLint("HandlerLeak")
     override fun onLooperPrepared() {
+        Log.i("thread-test", "onLooperPrepared")
+
         handler = object : Handler() {
             override fun handleMessage(msg: Message) {
                 // mainHandler 의 msg.what 값은 msg.arg1 에서 추출
