@@ -11,7 +11,7 @@ import org.personal.coupleapp.dialog.*
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 
 class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanTypeDialog.DialogListener, TimePickerDialog.TimePickerListener,
-    AlertDialog.DialogListener, DatePickerDialog.DatePickerListener , RadioButtonDialog.DialogListener{
+    CustomAlertDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener {
 
     private val TAG = javaClass.name
 
@@ -25,11 +25,12 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
     }
 
     override fun onBackPressed() {
-        val warningDialog = AlertDialog()
+        val warningDialog = CustomAlertDialog()
         val arguments = Bundle()
 
         arguments.putString("title", getText(R.string.goBackTitle).toString())
         arguments.putString("message", getText(R.string.goBackMessage).toString())
+        arguments.putBoolean("needAction", true)
 
         warningDialog.arguments = arguments
         warningDialog.show(supportFragmentManager, "BackWarning")
@@ -173,14 +174,14 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
 
     // 반복, 알림 선택 시
     override fun onRadioBtnChoice(whichDialog: Int, choice: String) {
-        when(whichDialog) {
+        when (whichDialog) {
             R.array.repeat -> repeatBtn.text = choice
             R.array.notification -> notificationBtn.text = choice
         }
     }
 
     // TODO: date 포맷을다시 year, date, dayOfMonth 로 변환 가능한지 찾는 중
-    private fun applyDateChoice(dateBtn:Button, year:Int, month:Int, dayOfMonth: Int) {
+    private fun applyDateChoice(dateBtn: Button, year: Int, month: Int, dayOfMonth: Int) {
         dateBtn.text = calendarHelper.setDateFormat(year, month, dayOfMonth)
     }
 
