@@ -54,6 +54,5 @@ class RadioButtonDialog : DialogFragment(), DialogInterface.OnClickListener {
             cancelID -> dismiss()
             else -> position = which
         }
-
     }
 }
