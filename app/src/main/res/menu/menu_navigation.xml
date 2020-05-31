@@ -17,9 +17,9 @@
         android:title="@string/album" />
 
     <item
-        android:id="@+id/map"
-        android:icon="@drawable/ic_location_on_black_24dp"
-        android:title="@string/map" />
+        android:id="@+id/notice"
+        android:icon="@drawable/ic_notifications_black_24dp"
+        android:title="@string/notice" />
 
     <item
         android:id="@+id/more"
