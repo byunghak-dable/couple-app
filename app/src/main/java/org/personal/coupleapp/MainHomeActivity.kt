@@ -1,38 +1,89 @@
 package org.personal.coupleapp
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.denzcoskun.imageslider.models.SlideModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
+import org.personal.coupleapp.adapter.ItemClickListener
+import org.personal.coupleapp.adapter.StoryAdapter
+import org.personal.coupleapp.data.StoryData
+import kotlin.collections.ArrayList
 
-class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
+class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener, ItemClickListener {
+
+    // 스토리 리스트(리사이클러 뷰) 관련 변수
+    private val storyList by lazy { ArrayList<StoryData>() }
+    private val storyAdapter by lazy { StoryAdapter(storyList, this) }
+
+    // floating 버튼 애니메이션 관련 변수
+    private val fabOpen by lazy { AnimationUtils.loadAnimation(this, R.anim.fab_open) }
+    private val fabClose by lazy { AnimationUtils.loadAnimation(this, R.anim.fab_close) }
+    private val fabClockwise by lazy { AnimationUtils.loadAnimation(this, R.anim.rotate_clockwise) }
+    private val fabAntiClockwise by lazy { AnimationUtils.loadAnimation(this, R.anim.rotate_anti_clockwise) }
+    private var isOpen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_home)
-        navigationControl()
+        setListener()
+        buildRecyclerView()
     }
 
-    private fun navigationControl() {
+    override fun onStart() {
+        super.onStart()
         bottomNavigation.selectedItemId = R.id.home
-        bottomNavigation.setOnNavigationItemSelectedListener(this)
     }
 
+    private fun setListener() {
+        bottomNavigation.setOnNavigationItemSelectedListener(this)
+        expandableAddBtn.setOnClickListener(this)
+        calendarBtn.setOnClickListener(this)
+        storyBtn.setOnClickListener(this)
+    }
+
+
+    private fun buildRecyclerView() {
+        val layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(this)
+
+        // 더미 데이터
+        for (i in 1..5) {
+            val slideModels = ArrayList<SlideModel>()
+            val storyData: StoryData
+
+            for (j in 1..5) {
+
+                slideModels.add(SlideModel("https://byline.network/wp-content/uploads/2018/05/cat.png"))
+            }
+            storyData = StoryData(slideModels)
+            storyList.add(storyData)
+        }
+
+        storyRV.setHasFixedSize(true)
+        storyRV.layoutManager = layoutManager
+        storyRV.adapter = storyAdapter
+    }
+
+    //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
+    //TODO: 추후 데이터를 같이 보내야 한다.
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.chat -> toChat()
             R.id.album -> toAlbum()
-            R.id.map -> toMap()
+            R.id.notice -> toNotice()
             R.id.more -> toMore()
         }
         overridePendingTransition(0, 0)
         return true
     }
 
-    // 네비게이션 바를 통해 이동하는 메소드
-    //TODO: 추후 데이터를 같이 보내야 한다.
     private fun toChat() {
         val toChat = Intent(this, MainChatActivity::class.java)
         startActivity(toChat)
@@ -43,8 +94,8 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startActivity(toAlbum)
     }
 
-    private fun toMap() {
-        val toMap = Intent(this, MainMapActivity::class.java)
+    private fun toNotice() {
+        val toMap = Intent(this, MainNoticeActivity::class.java)
         startActivity(toMap)
     }
 
@@ -53,5 +104,52 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startActivity(toMore)
     }
 
+    //------------------ 클릭 시 이벤트 관리하는 메소드 모음 ------------------
+    override fun onClick(v: View?) {
+        when (v?.id) {
+            R.id.expandableAddBtn -> expandMenuBtn()
+            R.id.calendarBtn -> toCalendar()
+            R.id.storyBtn -> toStory()
+        }
+    }
 
+    private fun expandMenuBtn() {
+
+        if (isOpen) {
+
+            handleAnimation(fabClose, fabClockwise, false)
+
+        } else {
+
+            handleAnimation(fabOpen, fabAntiClockwise, true)
+            calendarBtn.isClickable
+            storyBtn.isClickable
+        }
+    }
+
+    private fun toCalendar() {
+        val toCalendar = Intent(this, CalendarActivity::class.java)
+        startActivity(toCalendar)
+    }
+
+    private fun toStory() {
+        val toStory = Intent(this, StoryActivity::class.java)
+        startActivity(toStory)
+    }
+
+    // floating 버튼 애니메이션을 핸들링 하는 메소드
+    private fun handleAnimation(childAnimation: Animation, parentAnimation: Animation, isChileOpen: Boolean) {
+        calendarBtn.startAnimation(childAnimation)
+        calendarTV.startAnimation(childAnimation)
+        storyBtn.startAnimation(childAnimation)
+        addStoryTV.startAnimation(childAnimation)
+        expandableAddBtn.startAnimation(parentAnimation)
+
+        isOpen = isChileOpen
+    }
+
+    //TODO: 리사이클러 뷰 클릭 이벤트 구현
+    override fun onItemClick(itemPosition: Int) {
+
+    }
 }
