@@ -19,7 +19,6 @@ class PlanTypeDialog : DialogFragment(), View.OnClickListener {
 
     @SuppressLint("InflateParams")
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder: AlertDialog.Builder
         val inflater = requireActivity().layoutInflater
         val dialogView = inflater.inflate(R.layout.dialog_plan_type, null)
 
@@ -29,8 +28,9 @@ class PlanTypeDialog : DialogFragment(), View.OnClickListener {
         dialogView.schoolBtn.setOnClickListener(this)
         dialogView.otherBtn.setOnClickListener(this)
 
-        builder = AlertDialog.Builder(activity).setView(dialogView)
-        return builder.create()
+        return AlertDialog.Builder(activity)
+            .setView(dialogView)
+            .create()
     }
 
     override fun onClick(v: View?) {
@@ -45,7 +45,7 @@ class PlanTypeDialog : DialogFragment(), View.OnClickListener {
 
     // 사용자의 선택을 액티비티로 보내는 메소드
     private fun applyChoice(choice: String, imageSource:Int) {
-        dialogListener.applyPlanType(choice, imageSource)
+        dialogListener.onPlanTypeChoice(choice, imageSource)
         dismiss()
     }
 
@@ -65,6 +65,6 @@ class PlanTypeDialog : DialogFragment(), View.OnClickListener {
     }
 
     interface DialogListener {
-        fun applyPlanType(planType: String, imageSource:Int)
+        fun onPlanTypeChoice(planType: String, imageSource:Int)
     }
 }

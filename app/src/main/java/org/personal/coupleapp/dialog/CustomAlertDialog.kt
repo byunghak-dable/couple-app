@@ -10,11 +10,14 @@ import androidx.fragment.app.DialogFragment
 import org.personal.coupleapp.R
 import java.lang.ClassCastException
 
-class AlertDialog : DialogFragment(), DialogInterface.OnClickListener {
+class CustomAlertDialog : DialogFragment(), DialogInterface.OnClickListener {
 
     private val TAG = javaClass.name
 
-    private lateinit var dialogListener: DialogListener
+    // 알림창 용도로 확인 버튼을 눌렀을 때 액션이 필요한지 여부
+    private var needAction: Boolean? = false
+    private var dialogListener: DialogListener? = null
+
     // 확인, 취소 버튼 구분하기 위한 변수
     private val confirmID: Int by lazy { -1 }
     private val cancelID: Int by lazy { -2 }
@@ -23,6 +26,7 @@ class AlertDialog : DialogFragment(), DialogInterface.OnClickListener {
         // 제목과 메시지는 액티비티에서 보낸 정보로 다이얼로그 구성
         val title = arguments!!.getString("title")
         val message = arguments!!.getString("message")
+        needAction = arguments?.getBoolean("needAction")
 
         return AlertDialog.Builder(activity)
             .setTitle(title)
@@ -34,7 +38,17 @@ class AlertDialog : DialogFragment(), DialogInterface.OnClickListener {
 
     override fun onClick(dialog: DialogInterface?, which: Int) {
         when (which) {
-            confirmID -> dialogListener.applyConfirm()
+            confirmID -> {
+                // 액션이 필요하다면 리스너 사용
+                if (needAction!!) {
+
+                    dialogListener!!.applyConfirm()
+
+                }else {
+
+                    dismiss()
+                }
+            }
             cancelID -> dismiss()
         }
     }
