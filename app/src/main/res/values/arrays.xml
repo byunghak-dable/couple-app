@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="repeat">
+        <item>안함</item>
+        <item>매일</item>
+        <item>매주</item>
+        <item>매달</item>
+        <item>평일</item>
+        <item>주말</item>
+    </string-array>
+
+    <string-array name="notification">
+        <item>안함</item>
+        <item>시작 시간</item>
+        <item>10분 전</item>
+        <item>30분 전</item>
+        <item>하루 전</item>
+    </string-array>
+</resources>
