@@ -23,13 +23,13 @@ class AlertDialog : DialogFragment(), DialogInterface.OnClickListener {
         // 제목과 메시지는 액티비티에서 보낸 정보로 다이얼로그 구성
         val title = arguments!!.getString("title")
         val message = arguments!!.getString("message")
-        val builder = AlertDialog.Builder(activity)
+
+        return AlertDialog.Builder(activity)
             .setTitle(title)
             .setMessage(message)
             .setPositiveButton(R.string.confirm, this)
             .setNegativeButton(R.string.cancel, this)
-
-        return builder.create()
+            .create()
     }
 
     override fun onClick(dialog: DialogInterface?, which: Int) {

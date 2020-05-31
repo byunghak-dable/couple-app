@@ -152,7 +152,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
     }
 
     //------------------ ServerThread 와의 통신 결과를 안드로이드 Main UI 에 적용하는 Handler 클래스 ------------------
-    private class CustomHandler(activity: Activity, emailValidationTV: TextView) : Handler() {
+    private class CustomHandler(activity: AppCompatActivity, emailValidationTV: TextView) : Handler() {
 
         companion object {
             const val CHECK_EMAIL_VALIDATION = 1
@@ -160,7 +160,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
             var isEmailValid = false
         }
 
-        private val activityWeakReference: WeakReference<Activity> = WeakReference(activity)
+        private val activityWeakReference: WeakReference<AppCompatActivity> = WeakReference(activity)
         private val textViewWeakReference: WeakReference<TextView> = WeakReference(emailValidationTV)
         private val preferenceHelper = SharedPreferenceHelper
 
@@ -203,6 +203,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                 }
                 // 액티비티가 destroy 되면 바로 빠져나오도록
             } else {
+                // TODO: 로그 찍기
                 return
             }
         }
