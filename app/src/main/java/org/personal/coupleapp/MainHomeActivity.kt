@@ -15,9 +15,14 @@ import kotlinx.android.synthetic.main.activity_main_home.*
 import org.personal.coupleapp.adapter.ItemClickListener
 import org.personal.coupleapp.adapter.StoryAdapter
 import org.personal.coupleapp.data.StoryData
+import org.personal.coupleapp.dialog.WarningDialog
 import kotlin.collections.ArrayList
 
-class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener, ItemClickListener {
+class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener, ItemClickListener,
+    WarningDialog.DialogListener {
+
+    // warning dialog 아이디 값
+    private val FIRST_VISIT_DIALOG_ID = 1
 
     // 스토리 리스트(리사이클러 뷰) 관련 변수
     private val storyList by lazy { ArrayList<StoryData>() }
@@ -40,6 +45,23 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     override fun onStart() {
         super.onStart()
         bottomNavigation.selectedItemId = R.id.home
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // 처음 로그인했을 때 프로필 설정할 수 있도록 프로필 액티비티로 이동
+        if (intent.getBooleanExtra("firstTime", false)) {
+            val warningDialog = WarningDialog()
+            val arguments = Bundle()
+
+            arguments.putInt("dialogID", FIRST_VISIT_DIALOG_ID)
+            arguments.putString("title", getText(R.string.goBackTitle).toString())
+            arguments.putString("message", getText(R.string.goBackMessage).toString())
+
+            warningDialog.arguments = arguments
+            warningDialog.show(supportFragmentManager, "FirstTimeDialog")
+        }
     }
 
     private fun setListener() {
@@ -151,5 +173,16 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     //TODO: 리사이클러 뷰 클릭 이벤트 구현
     override fun onItemClick(itemPosition: Int) {
 
+    }
+
+    //------------------ 다이얼로그 fragment 인터페이스 메소드 모음 ------------------
+    // 롹인 버튼만 있는 warning 다이얼로그 이벤트 메소드
+    override fun applyConfirm(id: Int) {
+        when(id) {
+            FIRST_VISIT_DIALOG_ID -> {
+                val toProfileModify = Intent(this, ProfileModifyActivity::class.java)
+                startActivity(toProfileModify)
+            }
+        }
     }
 }
