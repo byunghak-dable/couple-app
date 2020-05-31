@@ -12,11 +12,15 @@ class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigation
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_album)
-        navigationControl()
+        setListener()
     }
 
-    private fun navigationControl() {
+    override fun onStart() {
+        super.onStart()
         bottomNavigation.selectedItemId = R.id.album
+    }
+
+    private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
     }
 
@@ -24,7 +28,7 @@ class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigation
         when (item.itemId) {
             R.id.home -> toHome()
             R.id.chat -> toChat()
-            R.id.map -> toMap()
+            R.id.notice -> toNotice()
             R.id.more -> toMore()
         }
         overridePendingTransition(0, 0)
@@ -43,8 +47,8 @@ class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigation
         startActivity(toChat)
     }
 
-    private fun toMap() {
-        val toMap = Intent(this, MainMapActivity::class.java)
+    private fun toNotice() {
+        val toMap = Intent(this, MainNoticeActivity::class.java)
         startActivity(toMap)
     }
 
