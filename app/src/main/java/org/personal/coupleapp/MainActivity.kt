@@ -9,7 +9,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    private val SPLASH_SCREEN_DELAY_TIME: Long = 1500
+    private val SPLASH_SCREEN_DELAY_TIME: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
