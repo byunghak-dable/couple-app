@@ -25,12 +25,10 @@ import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DE
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_PROFILE_UPLOAD
 import org.personal.coupleapp.data.ProfileData
-import org.personal.coupleapp.dialog.ChoiceDialog
-import org.personal.coupleapp.dialog.DatePickerDialog
-import org.personal.coupleapp.dialog.InformDialog
-import org.personal.coupleapp.dialog.RadioButtonDialog
+import org.personal.coupleapp.dialog.*
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
+import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.ref.WeakReference
 
@@ -51,14 +49,17 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
 
     private lateinit var serverConnectionThread: ServerConnectionThread
     private lateinit var imageDecodeThread: ImageDecodeThread
+
     // 프로필 이미지의 Bitmap 정보를 담고 있는 리스트
-    private val imageList: ArrayList<Bitmap> =  ArrayList()
+    private val imageList: ArrayList<Bitmap> = ArrayList()
+
     // 생일 정보를 담고 있는 변수
     private var birthdayInMills: Int? = null
 
+    private val loadingDialog by lazy { LoadingDialog() }
+
     // 카메라를 통해서 가져오는 이미지
     private lateinit var cameraImage: Uri
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,7 +95,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
 
     // 백그라운드 스레드 실행
     private fun startWorkerThread() {
-        val serverMainHandler = CustomHandler(this)
+        val serverMainHandler = CustomHandler(this, loadingDialog)
         val decodeMainHandler = ImageDecodeHandler(profileImageIV, imageList)
 
         serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
@@ -161,6 +162,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         val profileData = ProfileData(userColumnID, imageList[0], name, stateMessage, birthDay, sex)
 
         HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, profileData, UPLOAD_PROFILE, REQUEST_PROFILE_UPLOAD)
+        loadingDialog.show(supportFragmentManager, "Loading")
         Log.i(TAG, "프로필 변경 서버에 업로드 메시지 보냄")
     }
 
@@ -195,7 +197,8 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
 
         // 사용자가 카메라 또는 외부 저장장치의 저장을 허용한 적이 없는 경우
         if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED
-            || checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            || checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED
+        ) {
 
             // permission 을 granted 할 수 있도록 요청(카메라와 외부 저장장치에 쓸 수 있는 권한)
             val permission = arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -268,40 +271,48 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         if (resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 when (requestCode) {
-                    CAMERA_REQUEST_CODE -> {HandlerMessageHelper.decodeImage(imageDecodeThread, cameraImage, DECODE_INTO_BITMAP, SINGLE_IMAGE)
+                    CAMERA_REQUEST_CODE -> {
+                        HandlerMessageHelper.decodeImage(imageDecodeThread, cameraImage, DECODE_INTO_BITMAP, SINGLE_IMAGE)
 
                     }
-                    GALLERY_REQUEST_CODE ->  {HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, SINGLE_IMAGE)
-                    Log.i("이미지", imageList.toString())
-                }
+                    GALLERY_REQUEST_CODE -> {
+                        HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, SINGLE_IMAGE)
+                        Log.i("이미지", imageList.toString())
+                    }
                 }
             }
         }
     }
 
     // 프로필 사진 업로드,
-    private class CustomHandler(activity: AppCompatActivity) : Handler() {
+    private class CustomHandler(activity: AppCompatActivity, loadingDialog: LoadingDialog) : Handler() {
 
         companion object {
             const val UPLOAD_PROFILE = 1
         }
 
+        private val TAG = javaClass.name
+
         private val activityWeak: WeakReference<AppCompatActivity> = WeakReference(activity)
+        private val loadingWeak : WeakReference<LoadingDialog> = WeakReference(loadingDialog)
 
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
 
             val activity = activityWeak.get()
+            val loadingDialog = loadingWeak.get()
 
             // 액티비티가 destroy 되지 않았을 때
             if (activity != null) {
                 when (msg.what) {
                     UPLOAD_PROFILE -> {
+                        loadingDialog?.dismiss()
                         Log.i("ServerConnectionThread", msg.obj.toString())
                     }
                 }
                 // 액티비티가 destroy 되면 바로 빠져나오도록
             } else {
+                Log.i(TAG, "액티비티 제거로 인해 handler 종료")
                 return
             }
         }
