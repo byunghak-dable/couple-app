@@ -10,4 +10,5 @@ interface HTTPOutPut {
     fun fetchFromServer(): List<SingleUserData>
     fun postToServer(postJsonString: String): String
     fun postProfileToServer(profileData: ProfileData): String
+    fun getProfileFromServer(singleUserID: Int): ProfileData
 }
