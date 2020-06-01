@@ -11,7 +11,7 @@ import org.personal.coupleapp.dialog.*
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 
 class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanTypeDialog.DialogListener, TimePickerDialog.TimePickerListener,
-    CustomInformDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener {
+    InformDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener {
 
     private val TAG = javaClass.name
 
@@ -22,7 +22,7 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
     }
 
     override fun onBackPressed() {
-        val warningDialog = CustomInformDialog()
+        val warningDialog = InformDialog()
         val arguments = Bundle()
 
         arguments.putString("title", getText(R.string.goBackTitle).toString())
