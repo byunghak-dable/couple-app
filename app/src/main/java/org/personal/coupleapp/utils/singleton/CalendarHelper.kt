@@ -25,12 +25,19 @@ object CalendarHelper {
         return DateFormat.getDateInstance().format(calendar.time)
     }
 
+    // 날짜를 밀리세컨으로 변환하는 메소드
     fun dateToTimeInMills(year: Int, month: Int, dayOfMonth: Int): Int {
         calendar[Calendar.YEAR] = year
         calendar[Calendar.MONTH] = month
         calendar[Calendar.DAY_OF_MONTH] = dayOfMonth
 
         return calendar.timeInMillis.toInt()
+    }
+
+    fun timeInMillsToDate(timeInMills: Int): String {
+        calendar.timeInMillis =  timeInMills.toLong()
+
+        return DateFormat.getDateInstance().format(calendar.time)
     }
 
     //------------------ 현재 날짜를 가져오는 메소드들 ------------------
