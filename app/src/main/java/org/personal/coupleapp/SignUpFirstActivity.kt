@@ -1,6 +1,5 @@
 package org.personal.coupleapp
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -11,16 +10,15 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.IntegerRes
 import androidx.appcompat.app.AppCompatActivity
-import com.google.gson.JsonObject
 import kotlinx.android.synthetic.main.activity_sign_up_first.*
 import org.json.JSONObject
 import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.CHECK_EMAIL_VALIDATION
 import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.TO_SECOND_STEP
 import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.isEmailValid
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_POSTING
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POSTING
+import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
@@ -31,10 +29,10 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
     private val TAG = javaClass.name
     private val serverPage = "SignUp"
     private lateinit var serverConnectionThread: ServerConnectionThread
+    private val loadingDialog by lazy { LoadingDialog() }
 
     // utils/singleton 싱글톤 객체
     // Memo : object 는 한번만 선언 가능
-    private val handlerMessageHelper = HandlerMessageHelper
     private var isPasswordValid = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,7 +57,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
 
     // 백그라운드 스레드 실행
     private fun startWorkerThread() {
-        val mainHandler = CustomHandler(this, emailValidationTV)
+        val mainHandler = CustomHandler(this, emailValidationTV, loadingDialog)
         serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", mainHandler)
         serverConnectionThread.start()
     }
@@ -95,7 +93,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     postJsonObject.put("what", "emailValidation")
                     postJsonObject.put("email", s.toString())
 
-                    handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), CHECK_EMAIL_VALIDATION, REQUEST_POSTING)
+                    HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), CHECK_EMAIL_VALIDATION, REQUEST_SIMPLE_POSTING)
                 } else {
                     changeValidationStyle(emailValidationTV, R.string.emailInValid, R.color.red)
                 }
@@ -137,7 +135,9 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                 postJSONObject.put("email", email)
                 postJSONObject.put("password", password)
 
-                handlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP, REQUEST_POSTING)
+                HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP, REQUEST_SIMPLE_POSTING)
+                // 로딩 다이얼로그 보여주기
+                loadingDialog.show(supportFragmentManager, "Loading")
             } else {
                 Toast.makeText(this, getText(R.string.checkPassword), Toast.LENGTH_SHORT).show()
             }
@@ -152,7 +152,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
     }
 
     //------------------ ServerThread 와의 통신 결과를 안드로이드 Main UI 에 적용하는 Handler 클래스 ------------------
-    private class CustomHandler(activity: AppCompatActivity, emailValidationTV: TextView) : Handler() {
+    private class CustomHandler(activity: AppCompatActivity, emailValidationTV: TextView, loadingDialog: LoadingDialog) : Handler() {
 
         companion object {
             const val CHECK_EMAIL_VALIDATION = 1
@@ -160,9 +160,11 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
             var isEmailValid = false
         }
 
+        private val TAG = javaClass.name
+
         private val activityWeakReference: WeakReference<AppCompatActivity> = WeakReference(activity)
         private val textViewWeakReference: WeakReference<TextView> = WeakReference(emailValidationTV)
-        private val preferenceHelper = SharedPreferenceHelper
+        private val loadingDialogWeak :WeakReference<LoadingDialog> = WeakReference(loadingDialog)
 
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
@@ -188,22 +190,23 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     }
 
                     TO_SECOND_STEP -> {
-                        // 큰 따옴표를 제거하여 값 추출
+                        // 로딩 다이얼로그 삭제
+                        loadingDialogWeak.get()?.dismiss()
                         val userTableID = parseInt(msg.obj.toString())
                         val toStepTwo = Intent(activity, SignUpSecondActivity::class.java)
                         val columnKey = activity.getText(R.string.userColumnID).toString()
                         val partnerConnection = activity.getText(R.string.partnerConnection).toString()
 
                         // sharedPreference 에 single_user(DB table)의 id 값, 파트너 연결 여부 저장
-                        preferenceHelper.setInt(activity, columnKey, userTableID)
-                        preferenceHelper.setBoolean(activity, partnerConnection, false)
+                        SharedPreferenceHelper.setInt(activity, columnKey, userTableID)
+                        SharedPreferenceHelper.setBoolean(activity, partnerConnection, false)
                         activity.startActivity(toStepTwo)
                         activity.finish()
                     }
                 }
                 // 액티비티가 destroy 되면 바로 빠져나오도록
             } else {
-                // TODO: 로그 찍기
+                Log.i(TAG, "액티비티 제거로 인해 handler 종료")
                 return
             }
         }
