@@ -11,12 +11,9 @@ import org.personal.coupleapp.dialog.*
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 
 class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanTypeDialog.DialogListener, TimePickerDialog.TimePickerListener,
-    CustomAlertDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener {
+    CustomInformDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener {
 
     private val TAG = javaClass.name
-
-    // utils/singleton java.util 캘린더 객체를 사용하는 메소드 모아둔 싱글톤
-    private val calendarHelper = CalendarHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +22,7 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
     }
 
     override fun onBackPressed() {
-        val warningDialog = CustomAlertDialog()
+        val warningDialog = CustomInformDialog()
         val arguments = Bundle()
 
         arguments.putString("title", getText(R.string.goBackTitle).toString())
@@ -182,13 +179,13 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
 
     // TODO: date 포맷을다시 year, date, dayOfMonth 로 변환 가능한지 찾는 중
     private fun applyDateChoice(dateBtn: Button, year: Int, month: Int, dayOfMonth: Int) {
-        dateBtn.text = calendarHelper.setDateFormat(year, month, dayOfMonth)
+        dateBtn.text = CalendarHelper.setDateFormat(year, month, dayOfMonth)
     }
 
     // TODO: time 포맷을다시 hour, minute 으로 변환 가능한지 찾는 중
     private fun applyTimeChoice(timeBtn: Button, hour: Int, minute: Int) {
         // 시스템에서 설정된 시간 표현법으로 시간을 출력한다
-        timeBtn.text = calendarHelper.setTimeFormat(hour, minute)
+        timeBtn.text = CalendarHelper.setTimeFormat(hour, minute)
     }
 
     // alert 다이얼로그 확인 버튼 누를 때

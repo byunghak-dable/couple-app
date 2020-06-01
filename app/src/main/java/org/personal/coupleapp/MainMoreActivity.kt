@@ -26,6 +26,7 @@ class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
         mapIV.setOnClickListener(this)
+        profileIV.setOnClickListener(this)
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -64,6 +65,7 @@ class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     override fun onClick(v: View?) {
         when(v?.id) {
             R.id.mapIV -> toMap()
+            R.id.profileIV -> toProfile()
         }
     }
 
@@ -71,4 +73,10 @@ class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         val toMap = Intent(this, MapActivity::class.java)
         startActivity(toMap)
     }
+
+    private fun toProfile() {
+        val toProfile = Intent(this, ProfileActivity::class.java)
+        startActivity(toProfile)
+    }
+
 }
