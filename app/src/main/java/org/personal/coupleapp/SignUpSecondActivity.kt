@@ -1,6 +1,5 @@
 package org.personal.coupleapp
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
@@ -15,8 +14,8 @@ import org.json.JSONObject
 import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.GET_INVITE_CODE
 import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.SIGN_UP_COMPLETED
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_POSTING
-import org.personal.coupleapp.dialog.CustomAlertDialog
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POSTING
+import org.personal.coupleapp.dialog.InformDialog
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
@@ -81,7 +80,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         postJsonObject.put("what", "getInvitationCode")
         postJsonObject.put("singleUserID", userColumnID)
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_POSTING)
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_SIMPLE_POSTING)
         Log.i(TAG, "초대코드 서버로부터 받아오는 요청 보냄")
         Log.i("thread-test", "onResume 끝")
     }
@@ -121,7 +120,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         jsonObject.put("invitationSenderID", invitationSenderID)
         jsonObject.put("invitationReceiverCode", parseInt(opponentCodeED.text.toString()))
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), SIGN_UP_COMPLETED, REQUEST_POSTING)
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), SIGN_UP_COMPLETED, REQUEST_SIMPLE_POSTING)
         Log.i(TAG, "커플 DB에 업로드")
     }
 
@@ -153,15 +152,8 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
                     //TODO: 회원 가입 2단계 완료
                     SIGN_UP_COMPLETED -> {
                         when (msg.obj.toString()) {
-                            "true" -> {
-                                val toHome = Intent(activity, MainHomeActivity::class.java)
-
-//                                SharedPreferenceHelper.setInt(activity, activity.getText(R.string.coupleColumnID).toString(), )
-
-                            }
-
                             "false" -> {
-                                val alertDialog = CustomAlertDialog()
+                                val alertDialog = InformDialog()
                                 val arguments = Bundle()
 
                                 arguments.putString("title", "알림창")
@@ -169,6 +161,12 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
 
                                 alertDialog.arguments = arguments
                                 alertDialog.show(activity.supportFragmentManager, "WrongOpponentCode")
+                            }
+
+                            else -> {
+                                val coupleUserTableID = parseInt(msg.obj.toString())
+                                SharedPreferenceHelper.setInt(activity, activity.getText(R.string.coupleColumnID).toString(), coupleUserTableID)
+
                             }
                         }
                     }
