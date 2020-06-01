@@ -83,7 +83,7 @@
 
     <!--    AlertDialog 제목, 메시지-->
     <string name="goBackTitle">돌아가기</string>
-    <string name="goBackMessage">변경 사항은 저장되지 않습니다.\n그래도 돌아가시겠습니까?그래요</string>
+    <string name="goBackMessage">변경 사항은 저장되지 않습니다.\n그래도 돌아가시겠습니까?</string>
 
     <!--    더미 데이터-->
     <string name="dateDummy">날짜 넣어야 함</string>
