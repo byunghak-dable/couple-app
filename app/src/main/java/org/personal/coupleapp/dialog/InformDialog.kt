@@ -10,7 +10,7 @@ import androidx.fragment.app.DialogFragment
 import org.personal.coupleapp.R
 import java.lang.ClassCastException
 
-class CustomInformDialog : DialogFragment(), DialogInterface.OnClickListener {
+class InformDialog : DialogFragment(), DialogInterface.OnClickListener {
 
     private val TAG = javaClass.name
 
