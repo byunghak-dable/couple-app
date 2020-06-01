@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
 import android.util.Log
+import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.utils.serverConnection.HTTPRequest
 
 class ServerConnectionThread(name: String?, private val mainHandler: Handler) : HandlerThread(name) {
@@ -13,7 +14,9 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
     companion object {
         const val FETCH_DATA = 1
         const val POST_DATA = 2
-        const val REQUEST_POSTING = 1
+        const val REQUEST_SIMPLE_POSTING = 1
+        const val REQUEST_PROFILE_UPLOAD = 2
+
     }
 
     private val TAG = javaClass.name
@@ -49,16 +52,26 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                         // HashMap 으로 보낸 msg.obj 객체 캐스팅
                         val msgObjHashMap = msg.obj as HashMap<*, *>
                         val serverPage = msgObjHashMap["serverPage"].toString()
-                        val postJasonString = msgObjHashMap["postJsonString"].toString()
-
                         val httpRequest = HTTPRequest(serverPage)
                         val message = Message.obtain(mainHandler)
+                        val postData: Any
 
                         when (whichRequest) {
-                            REQUEST_POSTING -> message.obj = httpRequest.postToServer(postJasonString)
+                            // 간단한 데이터(메인 스레드에서 jsonString 으로 만들어서 보내는 경우)
+                            REQUEST_SIMPLE_POSTING -> {
+                                postData = msgObjHashMap["postData"].toString()
+                                message.obj = httpRequest.postToServer(postData)
+                            }
+
+                            // 프로필 데이터 보내는 경우
+                            REQUEST_PROFILE_UPLOAD -> {
+                                postData = msgObjHashMap["postData"] as ProfileData
+                                message.obj = httpRequest.postProfileToServer(postData)
+                            }
                         }
 
                         message.what = whichMessage
+                        Log.i(TAG, message.obj.toString())
                         message.sendToTarget()
                     }
                 }
