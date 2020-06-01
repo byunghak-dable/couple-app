@@ -2,10 +2,13 @@ package org.personal.coupleapp.utils.singleton
 
 import java.text.DateFormat
 import java.util.*
+import kotlin.collections.ArrayList
 
 object CalendarHelper {
 
     private val calendar = Calendar.getInstance()
+
+    val timeList:ArrayList<Int> = ArrayList()
 
     // 시간과 분을 입력 받고 사용자가 보기 편하게 시간 텍스트로 보여주는 메소드
     fun setTimeFormat(hour: Int, minute: Int): String {
@@ -13,7 +16,7 @@ object CalendarHelper {
         calendar[Calendar.MINUTE] = minute
         calendar[Calendar.SECOND] = 0
 
-        return DateFormat.getTimeInstance(DateFormat.SHORT).format(calendar.time)
+        return DateFormat.getTimeInstance().format(calendar.time)
     }
 
     // 년도, 월, 일을 입력 받고 Date 을 사용자에게 텍스트로 보여주는 메소드
