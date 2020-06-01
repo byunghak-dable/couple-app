@@ -25,6 +25,14 @@ object CalendarHelper {
         return DateFormat.getDateInstance().format(calendar.time)
     }
 
+    fun dateToTimeInMills(year: Int, month: Int, dayOfMonth: Int): Int {
+        calendar[Calendar.YEAR] = year
+        calendar[Calendar.MONTH] = month
+        calendar[Calendar.DAY_OF_MONTH] = dayOfMonth
+
+        return calendar.timeInMillis.toInt()
+    }
+
     //------------------ 현재 날짜를 가져오는 메소드들 ------------------
 
     fun getCurrentHour(): Int {
