@@ -11,11 +11,13 @@ import android.view.View
 import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_sign_up_second.*
 import org.json.JSONObject
+import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.CHECK_CONNECTION
 import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.GET_INVITE_CODE
-import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.SIGN_UP_COMPLETED
+import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.CHECK_CONNECTE_COMPLETED
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POSTING
 import org.personal.coupleapp.dialog.InformDialog
+import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
@@ -26,6 +28,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
     private val TAG = javaClass.name
     private val serverPage = "ConnectPartner"
     private lateinit var serverConnectionThread: ServerConnectionThread
+    private val loadingDialog by lazy { LoadingDialog() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,11 +60,12 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
     private fun setListener() {
         shareBtn.setOnClickListener(this)
         connectBtn.setOnClickListener(this)
+        checkConnectedBtn.setOnClickListener(this)
     }
 
     // 백그라운드 스레드 실행
     private fun startWorkerThread() {
-        val mainHandler = CustomHandler(this, myInviteCodeTV)
+        val mainHandler = CustomHandler(this, myInviteCodeTV, loadingDialog)
         serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", mainHandler)
         serverConnectionThread.start()
     }
@@ -99,6 +103,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         when (v?.id) {
             R.id.shareBtn -> shareInviteCode()
             R.id.connectBtn -> connectWithOpponent()
+            R.id.checkConnectedBtn -> checkConnection()
         }
     }
 
@@ -114,26 +119,43 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
     // 서버 연결을 통해 초대코드로 상대방과 연결하기
     private fun connectWithOpponent() {
         val jsonObject = JSONObject()
-        val invitationSenderID =  SharedPreferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
+        val invitationSenderID = SharedPreferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
 
         jsonObject.put("what", "connectToPartner")
-        jsonObject.put("invitationSenderID", invitationSenderID)
-        jsonObject.put("invitationReceiverCode", parseInt(opponentCodeED.text.toString()))
+        jsonObject.put("invitationReceiverID", invitationSenderID)
+        jsonObject.put("invitationSenderCode", parseInt(opponentCodeED.text.toString()))
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), SIGN_UP_COMPLETED, REQUEST_SIMPLE_POSTING)
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), CHECK_CONNECTE_COMPLETED, REQUEST_SIMPLE_POSTING)
         Log.i(TAG, "커플 DB에 업로드")
     }
 
+    // 상대방과 연결을 확인하는 메소드 (자신의 singleUser table id 값을 보내어 coupleUser table 에 id 가 존재하는지 확인한다
+    private fun checkConnection() {
+        val jsonObject = JSONObject()
+        val myColumnID = SharedPreferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
+
+        jsonObject.put("what", "checkConnection")
+        jsonObject.put("id", myColumnID)
+
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), CHECK_CONNECTION, REQUEST_SIMPLE_POSTING)
+        Log.i(TAG, "상대방과의 연결확인")
+        Log.i(TAG, jsonObject.toString())
+    }
+
     // 초대 코드를 받아오고,
-    private class CustomHandler(activity: AppCompatActivity, myInviteCode: TextView) : Handler() {
+    private class CustomHandler(activity: AppCompatActivity, myInviteCode: TextView, loadingDialog:LoadingDialog) : Handler() {
 
         companion object {
             const val GET_INVITE_CODE = 1
-            const val SIGN_UP_COMPLETED = 2
+            const val CHECK_CONNECTE_COMPLETED = 2
+            const val CHECK_CONNECTION = 3
         }
+
+        private val TAG = javaClass.name
 
         private val activityWeak: WeakReference<AppCompatActivity> = WeakReference(activity)
         private val myInviteCodeWeak: WeakReference<TextView> = WeakReference(myInviteCode)
+        private val loadingDialog: WeakReference<LoadingDialog> = WeakReference(loadingDialog)
 
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
@@ -144,13 +166,15 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
             // 액티비티가 destroy 되지 않았을 때
             if (activity != null) {
                 when (msg.what) {
+                    // 초대 코드 받기
                     GET_INVITE_CODE -> {
                         val invitationCode = msg.obj.toString()
                         myInviteCode?.text = invitationCode
                     }
-
-                    //TODO: 회원 가입 2단계 완료
-                    SIGN_UP_COMPLETED -> {
+                    // 연결 완료
+                    CHECK_CONNECTE_COMPLETED -> {
+                        // 로딩 다이얼로그 없애기
+                        loadingDialog.get()?.dismiss()
                         when (msg.obj.toString()) {
                             "false" -> {
                                 val alertDialog = InformDialog()
@@ -164,17 +188,53 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
                             }
 
                             else -> {
-                                val coupleUserTableID = parseInt(msg.obj.toString())
-                                SharedPreferenceHelper.setInt(activity, activity.getText(R.string.coupleColumnID).toString(), coupleUserTableID)
+                                onSignUpSuccess(activity, msg)
 
+                            }
+                        }
+                    }
+
+                    // 연결 확인 하기
+                    CHECK_CONNECTION -> {
+                        // 로딩 다이얼로그 숨기기
+                        loadingDialog.get()?.dismiss()
+                        when (msg.obj.toString()) {
+                            "false" -> {
+                                val alertDialog = InformDialog()
+                                val arguments = Bundle()
+
+                                arguments.putString("title", "알림창")
+                                arguments.putString("message", "상대방과 연결이 되지 않았습니다")
+
+                                alertDialog.arguments = arguments
+                                alertDialog.show(activity.supportFragmentManager, "WrongOpponentCode")
+                            }
+
+                            else -> {
+                                onSignUpSuccess(activity, msg)
                             }
                         }
                     }
                 }
                 // 액티비티가 destroy 되면 바로 빠져나오도록
             } else {
+                Log.i(TAG, "Handler 멈춤")
                 return
             }
+        }
+
+        // 상대방과 연결이 완료 되었을 때(회원 가입 2단계까지 완료) -> preference 에 커플 컬럼 id, 커플 연결 완료 Boolean 값(true) 저장
+        private fun onSignUpSuccess(activity: AppCompatActivity, msg:Message) {
+            val toHome = Intent(activity, MainHomeActivity::class.java)
+            val coupleColumnKey = activity.getText(R.string.coupleColumnID).toString()
+            val partnerConnection = activity.getText(R.string.partnerConnection).toString()
+
+            // 커플 컬럼 아이디를 shared 에 저장
+            SharedPreferenceHelper.setInt(activity, coupleColumnKey, parseInt(msg.obj.toString()))
+            SharedPreferenceHelper.setBoolean(activity, partnerConnection, true)
+
+            toHome.putExtra("firstTime", true)
+            activity.startActivity(toHome)
         }
     }
 }
