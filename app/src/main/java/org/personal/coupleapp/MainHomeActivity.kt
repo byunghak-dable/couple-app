@@ -1,7 +1,10 @@
 package org.personal.coupleapp
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -10,24 +13,45 @@ import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.denzcoskun.imageslider.models.SlideModel
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
+import org.json.JSONObject
+import org.personal.coupleapp.MainHomeActivity.CustomHandler.Companion.GET_HOME_STORY_DATA
 import org.personal.coupleapp.adapter.ItemClickListener
 import org.personal.coupleapp.adapter.StoryAdapter
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_STORY_DATA
 import org.personal.coupleapp.data.StoryData
+import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.dialog.WarningDialog
-import kotlin.collections.ArrayList
+import org.personal.coupleapp.utils.InfiniteScrollListener
+import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
+import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
+import java.lang.ref.WeakReference
 
 class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener, ItemClickListener,
-    WarningDialog.DialogListener {
+    WarningDialog.DialogListener, SwipeRefreshLayout.OnRefreshListener {
+
+    private val TAG = javaClass.name
+
+    // 홈 페이지라 domain 만 사용
+    private val serverPage = ""
 
     // warning dialog 아이디 값
     private val FIRST_VISIT_DIALOG_ID = 1
 
+    // 서버 통신관련 변수
+    private lateinit var serverConnectionThread: ServerConnectionThread
+    private val loadingDialog = LoadingDialog()
+
+    // onResume 에서 초기 스토리 데이터 가져올지 여부 결정
+    private var isInitStoryData = false
+
     // 스토리 리스트(리사이클러 뷰) 관련 변수
-    private val storyList by lazy { ArrayList<StoryData>() }
-    private val storyAdapter by lazy { StoryAdapter(storyList, this) }
+    private val storyList = ArrayList<StoryData>()
+    private val storyAdapter = StoryAdapter(storyList, this)
+    private lateinit var scrollListener: InfiniteScrollListener
 
     // floating 버튼 애니메이션 관련 변수
     private val fabOpen by lazy { AnimationUtils.loadAnimation(this, R.anim.fab_open) }
@@ -41,6 +65,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         setContentView(R.layout.activity_main_home)
         setListener()
         buildRecyclerView()
+        startWorkerThread()
 
         // 처음 로그인했을 때 프로필 설정할 수 있도록 프로필 액티비티로 이동
         if (intent.getBooleanExtra("firstTime", false)) {
@@ -61,37 +86,72 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         bottomNavigation.selectedItemId = R.id.home
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        // 초기 스토리 데이터 불러왔는지 확인하고 불러오지 않았으면 스토리 데이터 요청
+        if (!isInitStoryData) {
+            swipeRefreshSR.isRefreshing = true
+            HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, makeItemRangeInJson(0), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
+            isInitStoryData = true
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopWorkerThread()
+    }
+
     private fun setListener() {
         bottomNavigation.setOnNavigationItemSelectedListener(this)
         expandableAddBtn.setOnClickListener(this)
         calendarBtn.setOnClickListener(this)
         storyBtn.setOnClickListener(this)
+        swipeRefreshSR.setOnRefreshListener(this)
     }
 
 
     private fun buildRecyclerView() {
-        val layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(this)
-
-        // 더미 데이터
-        for (i in 1..5) {
-            val slideModels = ArrayList<SlideModel>()
-            val storyData: StoryData
-
-            for (j in 1..5) {
-
-                slideModels.add(SlideModel("https://byline.network/wp-content/uploads/2018/05/cat.png"))
-            }
-            storyData = StoryData(slideModels)
-            storyList.add(storyData)
-        }
+        val layoutManager = LinearLayoutManager(this)
 
         storyRV.setHasFixedSize(true)
         storyRV.layoutManager = layoutManager
+        scrollListener = object : InfiniteScrollListener(layoutManager) {
+            override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView?) {
+                HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, makeItemRangeInJson(page), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
+            }
+        }
+        storyRV.addOnScrollListener(scrollListener)
         storyRV.adapter = storyAdapter
     }
 
+
+    // 백그라운드 스레드 실행
+    private fun startWorkerThread() {
+        val serverMainHandler = CustomHandler(this, storyList, storyAdapter, swipeRefreshSR)
+
+        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
+        serverConnectionThread.start()
+    }
+
+    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
+    private fun stopWorkerThread() {
+        Log.i(TAG, "thread 종료")
+        serverConnectionThread.looper.quit()
+    }
+
+    // 무한 스크롤링 아이템 범위를 정해서 jsonString 으로 변환(서버에 보낼)하는 메소드
+    private fun makeItemRangeInJson(page: Int): String {
+        val jsonObject = JSONObject()
+        val coupleColumnID = SharedPreferenceHelper.getInt(this, getText(R.string.coupleColumnID).toString())
+
+        jsonObject.put("coupleID", coupleColumnID)
+        jsonObject.put("page", page)
+
+        return jsonObject.toString()
+    }
+
     //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
-    //TODO: 추후 데이터를 같이 보내야 한다.
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.chat -> toChat()
@@ -132,6 +192,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         }
     }
 
+    // 만약 연필 모양의 플로팅 버튼을 추가한 경우 메소드 호출
     private fun expandMenuBtn() {
 
         if (isOpen) {
@@ -167,6 +228,16 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         isOpen = isChileOpen
     }
 
+    //------------------ Refresh 할 때 이벤트 관리하는 메소드 모음 ------------------
+    // 새로 고침할 때 리스트 clear, 스크롤리스너 내부 변수 값 초기화, 새로운 데이터 불러오기 실행
+    override fun onRefresh() {
+        swipeRefreshSR.isRefreshing = true
+        scrollListener.resetState()
+        storyList.clear()
+        storyAdapter.notifyDataSetChanged()
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, makeItemRangeInJson(0), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
+    }
+
     //TODO: 리사이클러 뷰 클릭 이벤트 구현
     override fun onItemClick(itemPosition: Int) {
 
@@ -175,10 +246,53 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     //------------------ 다이얼로그 fragment 인터페이스 메소드 모음 ------------------
     // 롹인 버튼만 있는 warning 다이얼로그 이벤트 메소드
     override fun applyConfirm(id: Int) {
-        when(id) {
+        when (id) {
             FIRST_VISIT_DIALOG_ID -> {
                 val toProfileModify = Intent(this, ProfileModifyActivity::class.java)
                 startActivity(toProfileModify)
+            }
+        }
+    }
+
+    private class CustomHandler(
+        activity: Activity,
+        val storyList: ArrayList<StoryData>,
+        val storyAdapter: StoryAdapter,
+        swipeRefreshSR: SwipeRefreshLayout
+    ) : Handler() {
+
+        companion object {
+            const val GET_HOME_STORY_DATA = 1
+        }
+
+        private val TAG = javaClass.name
+
+        private val activityWeakReference: WeakReference<Activity> = WeakReference(activity)
+        private val swipeRefreshSRWeak: WeakReference<SwipeRefreshLayout> = WeakReference(swipeRefreshSR)
+
+
+        override fun handleMessage(msg: Message) {
+            super.handleMessage(msg)
+
+            val activity = activityWeakReference.get()
+
+            if (activity != null) {
+                when (msg.what) {
+                    GET_HOME_STORY_DATA -> {
+                        swipeRefreshSRWeak.get()?.isRefreshing = false
+                        if (msg.obj == null) {
+                            Log.i("확인", "ㅛㄷㄴ")
+                        } else {
+                            val fetchedStoryList = msg.obj as ArrayList<StoryData>
+                            fetchedStoryList.forEach { storyList.add(it) }
+
+                            Log.i(TAG, storyList[0].id.toString())
+                            storyAdapter.notifyDataSetChanged()
+                        }
+                    }
+                }
+            } else {
+                return
             }
         }
     }
