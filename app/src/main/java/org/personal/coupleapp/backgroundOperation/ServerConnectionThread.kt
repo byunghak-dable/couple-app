@@ -6,7 +6,9 @@ import android.os.HandlerThread
 import android.os.Message
 import android.util.Log
 import org.personal.coupleapp.data.ProfileData
+import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.utils.serverConnection.HTTPRequest
+import java.lang.Integer.parseInt
 
 class ServerConnectionThread(name: String?, private val mainHandler: Handler) : HandlerThread(name) {
 
@@ -16,7 +18,9 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
         const val POST_DATA = 2
         const val REQUEST_SIMPLE_POSTING = 1
         const val REQUEST_PROFILE_UPLOAD = 2
-
+        const val REQUEST_PROFILE_INFO = 3
+        const val REQUEST_UPLOAD_STORY = 4
+        const val REQUEST_STORY_DATA = 5
     }
 
     private val TAG = javaClass.name
@@ -68,10 +72,28 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                                 postData = msgObjHashMap["postData"] as ProfileData
                                 message.obj = httpRequest.postProfileToServer(postData)
                             }
+
+                            REQUEST_PROFILE_INFO -> {
+                                postData = msgObjHashMap["postData"].toString()
+                                Log.i(TAG, postData)
+                                message.obj = httpRequest.getProfileFromServer(parseInt(postData))
+                            }
+
+                            REQUEST_UPLOAD_STORY -> {
+                                postData = msgObjHashMap["postData"] as StoryData
+                                Log.i(TAG, postData.toString())
+                                message.obj = httpRequest.postStoryToServer(postData)
+                            }
+
+                            REQUEST_STORY_DATA -> {
+                                postData = msgObjHashMap["postData"] as StoryData
+                                Log.i(TAG, postData.toString())
+                                message.obj = httpRequest.postStoryToServer(postData)
+                            }
                         }
 
                         message.what = whichMessage
-                        Log.i(TAG, message.obj.toString())
+//                        Log.i(TAG, message.obj.toString())
                         message.sendToTarget()
                     }
                 }
