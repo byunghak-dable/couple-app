@@ -19,7 +19,6 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_modify_profile.*
 import org.personal.coupleapp.ProfileModifyActivity.CustomHandler.Companion.UPLOAD_PROFILE
 import org.personal.coupleapp.backgroundOperation.ImageDecodeHandler
-import org.personal.coupleapp.backgroundOperation.ImageDecodeHandler.Companion.SINGLE_IMAGE
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_BITMAP
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
@@ -285,11 +284,11 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
             if (data != null) {
                 when (requestCode) {
                     CAMERA_REQUEST_CODE -> {
-                        HandlerMessageHelper.decodeImage(imageDecodeThread, cameraImage, DECODE_INTO_BITMAP, SINGLE_IMAGE)
+                        HandlerMessageHelper.decodeImage(imageDecodeThread, cameraImage, DECODE_INTO_BITMAP, 1)
 
                     }
                     GALLERY_REQUEST_CODE -> {
-                        HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, SINGLE_IMAGE)
+                        HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, 1)
                         Log.i("이미지", imageList.toString())
                     }
                 }
