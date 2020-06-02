@@ -86,14 +86,13 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                             }
 
                             REQUEST_STORY_DATA -> {
-                                postData = msgObjHashMap["postData"] as StoryData
+                                postData = msgObjHashMap["postData"].toString()
                                 Log.i(TAG, postData.toString())
-                                message.obj = httpRequest.postStoryToServer(postData)
+                                message.obj = httpRequest.getStoryFromServer(postData)
                             }
                         }
 
                         message.what = whichMessage
-//                        Log.i(TAG, message.obj.toString())
                         message.sendToTarget()
                     }
                 }
