@@ -1,6 +1,3 @@
 package org.personal.coupleapp.data
 
-import com.denzcoskun.imageslider.models.SlideModel
-
-//val profileImage: String, val title: String, 사이에 , val description: String
-data class StoryData(val imageList: ArrayList<SlideModel>)
+data class StoryData(val id: Int?, val couple_id: Int, val title: String, val description: String, val date: Int, var photo_path: ArrayList<Any>)
