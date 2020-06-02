@@ -1,6 +1,5 @@
 package org.personal.coupleapp.adapter
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,9 +13,6 @@ import org.personal.coupleapp.utils.singleton.CalendarHelper
 
 class StoryAdapter(private val storyList: ArrayList<StoryData>, private val itemClickListener: ItemClickListener) :
     RecyclerView.Adapter<StoryAdapter.ViewHolder>() {
-
-    val VIEW_TYPE_LOADING = 1
-    val VIEW_TYPE_ITEM = 2
 
     class ViewHolder(itemView: View, val itemClickListener: ItemClickListener) : RecyclerView.ViewHolder(itemView) {
         val imageSlider: ImageSlider = itemView.findViewById(R.id.imageSliderIS)
@@ -34,16 +30,11 @@ class StoryAdapter(private val storyList: ArrayList<StoryData>, private val item
         return storyList.size
     }
 
-
-    override fun getItemViewType(position: Int): Int {
-
-        return if (storyList[position] == null) VIEW_TYPE_LOADING else VIEW_TYPE_ITEM
-    }
-
     override fun onBindViewHolder(holder: StoryAdapter.ViewHolder, position: Int) {
         val storyData: StoryData = storyList[position]
         val slideModelList = ArrayList<SlideModel>()
 
+        // 스토리 데이터 중 이미지 정보는 url String 값을 받아오기 때문에 SlideModel 객체를 생성해서 추가한다.
         storyData.photo_path.forEach{
             val slideModel = SlideModel(it as String)
             slideModelList.add(slideModel)
