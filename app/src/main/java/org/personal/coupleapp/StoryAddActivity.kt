@@ -129,7 +129,7 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         val date = dateTimeInMills
 
         // 스토리 데이터 객체를 스레드로 보낸다
-        val storyData = StoryData(coupleColumnID, title, description, date, imageList as ArrayList<Any>)
+        val storyData = StoryData(null, coupleColumnID, title, description, date, imageList as ArrayList<Any>)
 
         HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, storyData, UPLOAD_STORY_DATA, REQUEST_UPLOAD_STORY)
         loadingDialog.show(supportFragmentManager, "Loading")
