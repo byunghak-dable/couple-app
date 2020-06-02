@@ -50,13 +50,13 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
     private lateinit var serverConnectionThread: ServerConnectionThread
     private lateinit var imageDecodeThread: ImageDecodeThread
 
+    // 로딩 다이얼로그
+    private val loadingDialog = LoadingDialog()
     // 프로필 이미지의 Bitmap 정보를 담고 있는 리스트
     private val imageList: ArrayList<Bitmap> = ArrayList()
 
     // 생일 정보를 담고 있는 변수
     private var birthdayInMills: Int? = null
-
-    private val loadingDialog by lazy { LoadingDialog() }
 
     // 카메라를 통해서 가져오는 이미지
     private lateinit var cameraImage: Uri

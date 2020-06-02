@@ -5,6 +5,8 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import android.util.Log
 import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 
 object ImageEncodeHelper {
@@ -32,10 +34,32 @@ object ImageEncodeHelper {
     }
 
 
-     // Bitmap 을 byte 배열로 변환
+    // Bitmap 을 byte 배열로 변환
     fun bitmapToByteArray(bitmap: Bitmap): ByteArray? {
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream)
         return byteArrayOutputStream.toByteArray()
+    }
+
+    // 서버나 외부 URL 로부터 이미지를 불러오는 메소드
+    fun getServerImage(imageUrl: String): Bitmap? {
+        //서버에 올려둔 이미지 URL
+        val url = URL(imageUrl)
+        val urlConnection = url.openConnection() as HttpURLConnection
+        var bitmap: Bitmap? = null
+
+        urlConnection.connect() //연결된 곳에 접속할 때 (connect() 호출해야 실제 통신 가능함)
+
+        try {
+            val inputStream = urlConnection.inputStream //inputStream 값 가져오기
+            bitmap = BitmapFactory.decodeStream(inputStream) // Bitmap으로 반환
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.i(TAG, "IO 문제 발생")
+        } finally {
+            // 에러가 발생하더라도 openConnection 으로 연결한 connection 닫기
+            urlConnection.disconnect()
+        }
+        return bitmap
     }
 }
