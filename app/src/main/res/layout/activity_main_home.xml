@@ -24,14 +24,21 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/storyRV"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshSR"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topBarTV" />
+        app:layout_constraintTop_toBottomOf="@id/topBarTV">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/storyRV"
+            android:layout_width="0dp"
+            android:layout_height="0dp" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/expandableAddBtn"
@@ -117,7 +124,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:menu="@menu/menu_navigation"
-        app:layout_constraintTop_toBottomOf="@id/storyRV"/>
+        app:menu="@menu/menu_navigation" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
