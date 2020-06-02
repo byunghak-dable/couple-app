@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import org.json.JSONObject
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.data.SingleUserData
+import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 
 class HTTPRequest(private val serverPage: String) : HTTPOutPut {
@@ -59,9 +60,30 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         jsonObject.put("id", singleUserID)
 
         val jsonString: String = hTTPConnection.postRequest(jsonObject.toString())
-        val profileData =  gson.fromJson(jsonString, ProfileData::class.java)
+        val profileData = gson.fromJson(jsonString, ProfileData::class.java)
         val profileImageBitmap = ImageEncodeHelper.getServerImage(profileData.profile_image.toString())
         profileData.profile_image = profileImageBitmap
         return profileData
+    }
+
+    override fun postStoryToServer(storyData: StoryData): String {
+        val jsonString: String
+        val gson = Gson()
+        val postJson: String
+        val base64ImageList: ArrayList<String?> = ArrayList()
+
+        // 비트맵 이미지를 base64 로 변환
+        storyData.photo_path.forEach {
+            base64ImageList.add(ImageEncodeHelper.bitmapToString(it as Bitmap))
+        }
+
+        // 변환한 이미지를 다시 선언하여 Bitmap 에서 String 타입이 변환
+        storyData.photo_path = base64ImageList as ArrayList<Any>
+        postJson = gson.toJson(storyData)
+
+        // 결과를 받는다(성공 여부)
+        jsonString = hTTPConnection.postRequest(postJson)
+        Log.i(TAG, jsonString)
+        return jsonString
     }
 }
