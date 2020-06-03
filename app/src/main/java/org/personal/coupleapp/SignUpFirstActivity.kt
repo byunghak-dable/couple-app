@@ -17,7 +17,7 @@ import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.CHECK_
 import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.TO_SECOND_STEP
 import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.isEmailValid
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POSTING
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POST_METHOD
 import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
@@ -93,7 +93,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     postJsonObject.put("what", "emailValidation")
                     postJsonObject.put("email", s.toString())
 
-                    HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), CHECK_EMAIL_VALIDATION, REQUEST_SIMPLE_POSTING)
+                    HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), CHECK_EMAIL_VALIDATION, REQUEST_SIMPLE_POST_METHOD)
                 } else {
                     changeValidationStyle(emailValidationTV, R.string.emailInValid, R.color.red)
                 }
@@ -135,7 +135,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                 postJSONObject.put("email", email)
                 postJSONObject.put("password", password)
 
-                HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP, REQUEST_SIMPLE_POSTING)
+                HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP, REQUEST_SIMPLE_POST_METHOD)
                 // 로딩 다이얼로그 보여주기
                 loadingDialog.show(supportFragmentManager, "Loading")
             } else {
