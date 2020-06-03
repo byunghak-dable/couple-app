@@ -19,7 +19,6 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_modify_profile.*
 import org.personal.coupleapp.ProfileModifyActivity.CustomHandler.Companion.UPLOAD_PROFILE
 import org.personal.coupleapp.backgroundOperation.ImageDecodeHandler
-import org.personal.coupleapp.backgroundOperation.ImageDecodeHandler.Companion.SINGLE_IMAGE
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_BITMAP
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
@@ -29,6 +28,7 @@ import org.personal.coupleapp.dialog.*
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.dialog.LoadingDialog
+import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.ref.WeakReference
 
@@ -52,6 +52,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
 
     // 로딩 다이얼로그
     private val loadingDialog = LoadingDialog()
+
     // 프로필 이미지의 Bitmap 정보를 담고 있는 리스트
     private val imageList: ArrayList<Bitmap> = ArrayList()
 
@@ -66,6 +67,17 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         setContentView(R.layout.activity_modify_profile)
         setListener()
         startWorkerThread()
+
+        if (intent.hasExtra("name")) {
+            // 싱글턴에 저장해 놓은 bitmap 을 사용
+            imageList.add(ImageEncodeHelper.bitmapList[0])
+            birthdayInMills = CalendarHelper.timeList[0]
+            profileImageIV.setImageBitmap(ImageEncodeHelper.bitmapList[0])
+            nameED.setText(intent.getStringExtra("name"))
+            stateED.setText(intent.getStringExtra("stateMessage"))
+            birthdayBtn.text = intent.getStringExtra("birthday")
+            sexBtn.text = intent.getStringExtra("sex")
+        }
     }
 
     override fun onDestroy() {
@@ -272,11 +284,11 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
             if (data != null) {
                 when (requestCode) {
                     CAMERA_REQUEST_CODE -> {
-                        HandlerMessageHelper.decodeImage(imageDecodeThread, cameraImage, DECODE_INTO_BITMAP, SINGLE_IMAGE)
+                        HandlerMessageHelper.decodeImage(imageDecodeThread, cameraImage, DECODE_INTO_BITMAP, 1)
 
                     }
                     GALLERY_REQUEST_CODE -> {
-                        HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, SINGLE_IMAGE)
+                        HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, 1)
                         Log.i("이미지", imageList.toString())
                     }
                 }
@@ -294,7 +306,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         private val TAG = javaClass.name
 
         private val activityWeak: WeakReference<AppCompatActivity> = WeakReference(activity)
-        private val loadingWeak : WeakReference<LoadingDialog> = WeakReference(loadingDialog)
+        private val loadingWeak: WeakReference<LoadingDialog> = WeakReference(loadingDialog)
 
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
@@ -307,7 +319,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
                 when (msg.what) {
                     UPLOAD_PROFILE -> {
                         loadingDialog?.dismiss()
-                        Log.i("ServerConnectionThread", msg.obj.toString())
+                        activity.finish()
                     }
                 }
                 // 액티비티가 destroy 되면 바로 빠져나오도록
@@ -317,5 +329,4 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
             }
         }
     }
-
 }

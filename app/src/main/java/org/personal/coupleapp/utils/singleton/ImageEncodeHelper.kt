@@ -13,6 +13,8 @@ object ImageEncodeHelper {
 
     private val TAG = javaClass.name
 
+    var bitmapList: ArrayList<Bitmap> = ArrayList()
+
     // String 을 Bitmap 으로 변환
     fun stringToBitmap(encodedString: String?): Bitmap? {
         return try {
@@ -28,7 +30,7 @@ object ImageEncodeHelper {
     //Bitmap 을 String 형으로 변환
     fun bitmapToString(bitmap: Bitmap?): String? {
         val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap?.compress(Bitmap.CompressFormat.PNG, 70, byteArrayOutputStream)
+        bitmap?.compress(Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream)
         val bytes: ByteArray = byteArrayOutputStream.toByteArray()
         return Base64.encodeToString(bytes, Base64.DEFAULT)
     }

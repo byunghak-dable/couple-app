@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.denzcoskun.imageslider.ImageSlider
+import com.denzcoskun.imageslider.models.SlideModel
 import org.personal.coupleapp.R
 import org.personal.coupleapp.data.StoryData
 
@@ -27,6 +28,6 @@ class StoryAdapter(private val storyList: ArrayList<StoryData>, private val item
 
     override fun onBindViewHolder(holder: StoryAdapter.ViewHolder, position: Int) {
         val storyData: StoryData = storyList[position]
-        holder.imageSlider.setImageList(storyData.imageList, true)
+        holder.imageSlider.setImageList(storyData.photo_path as ArrayList<SlideModel>, true)
     }
 }

@@ -3,6 +3,9 @@
     package="org.personal.coupleapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -12,22 +15,32 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar"
         android:usesCleartextTraffic="true">
-
+        <activity android:name=".StoryAddActivity"></activity>
+        <activity android:name=".ProfileActivity" />
+        <activity android:name=".ProfileModifyActivity" />
+        <activity android:name=".MapActivity" />
+        <activity android:name=".ChattingActivity" />
+        <activity android:name=".CalendarAddPlanActivity" />
+        <activity android:name=".CalendarActivity" />
+        <activity android:name=".StoryActivity" />
         <activity android:name=".SignUpSecondActivity">
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http"
+
+                <data
                     android:host="@string/serverDomain"
-                    android:pathPrefix="/DeepLink" />
+                    android:pathPrefix="/DeepLink"
+                    android:scheme="http" />
             </intent-filter>
         </activity>
         <activity android:name=".SignUpFirstActivity" />
         <activity android:name=".BoardActivity" />
         <activity android:name=".SignInActivity" />
         <activity android:name=".MainMoreActivity" />
-        <activity android:name=".MainMapActivity" />
+        <activity android:name=".MainNoticeActivity" />
         <activity android:name=".MainAlbumActivity" />
         <activity android:name=".MainChatActivity" />
         <activity android:name=".MainHomeActivity" />

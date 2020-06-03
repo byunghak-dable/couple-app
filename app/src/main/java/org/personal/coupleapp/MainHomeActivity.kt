@@ -2,6 +2,7 @@ package org.personal.coupleapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.view.animation.Animation
@@ -40,15 +41,6 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         setContentView(R.layout.activity_main_home)
         setListener()
         buildRecyclerView()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        bottomNavigation.selectedItemId = R.id.home
-    }
-
-    override fun onResume() {
-        super.onResume()
 
         // 처음 로그인했을 때 프로필 설정할 수 있도록 프로필 액티비티로 이동
         if (intent.getBooleanExtra("firstTime", false)) {
@@ -56,12 +48,17 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
             val arguments = Bundle()
 
             arguments.putInt("dialogID", FIRST_VISIT_DIALOG_ID)
-            arguments.putString("title", getText(R.string.goBackTitle).toString())
-            arguments.putString("message", getText(R.string.goBackMessage).toString())
+            arguments.putString("title", "환영합니다")
+            arguments.putString("message", "프로필을 설정해주세요.\n확인을 누르면 프로필 설정창으로 이동합니다")
 
             warningDialog.arguments = arguments
             warningDialog.show(supportFragmentManager, "FirstTimeDialog")
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        bottomNavigation.selectedItemId = R.id.home
     }
 
     private fun setListener() {

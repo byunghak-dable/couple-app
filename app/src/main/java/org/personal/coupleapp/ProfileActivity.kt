@@ -2,7 +2,6 @@ package org.personal.coupleapp
 
 import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -11,12 +10,9 @@ import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import kotlinx.android.synthetic.main.activity_modify_profile.*
 import kotlinx.android.synthetic.main.activity_profile.*
 import kotlinx.android.synthetic.main.activity_profile.profileImageIV
 import org.personal.coupleapp.ProfileActivity.CustomHandler.Companion.SHOW_PROFILE_INFO
-import org.personal.coupleapp.backgroundOperation.ImageDecodeHandler
-import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_PROFILE_INFO
 import org.personal.coupleapp.data.ProfileData
@@ -29,24 +25,21 @@ import java.lang.ref.WeakReference
 
 class ProfileActivity : AppCompatActivity(), View.OnClickListener {
 
-    private val TAG = javaClass.name
+    private val TAG = "ProfileActivity"
 
     private val serverPage = "Profile"
 
     private lateinit var serverConnectionThread: ServerConnectionThread
-    private lateinit var imageDecodeThread: ImageDecodeThread
 
     // 로딩 다이얼로그
     private val loadingDialog = LoadingDialog()
-
-    // 프로필 이미지의 Bitmap 정보를 담고 있는 리스트
-    private val imageList: ArrayList<Bitmap> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
         setListener()
         startWorkerThread()
+        Log.e("ProfileActivity", "thread 종료")
     }
 
     override fun onResume() {
@@ -68,12 +61,9 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener {
     // 백그라운드 스레드 실행
     private fun startWorkerThread() {
         val serverMainHandler = CustomHandler(this, loadingDialog, profileImageIV, nameTV, stateTV, birthdayTV, sexTV)
-        val decodeMainHandler = ImageDecodeHandler(profileImageIV, imageList)
 
         serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
-        imageDecodeThread = ImageDecodeThread("ImageDecodeThread", this, decodeMainHandler)
         serverConnectionThread.start()
-        imageDecodeThread.start()
     }
 
 
@@ -81,7 +71,6 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener {
     private fun stopWorkerThread() {
         Log.i(TAG, "thread 종료")
         serverConnectionThread.looper.quit()
-        imageDecodeThread.looper.quit()
     }
 
     override fun onClick(v: View?) {
@@ -94,6 +83,12 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener {
     // 프로필 변경 액티비티로 이동(이동할 때 데이터도 같이 전송)
     private fun toModifyProfile() {
         val toModifyProfile = Intent(this, ProfileModifyActivity::class.java)
+
+        toModifyProfile.putExtra("name", nameTV.text.toString())
+        toModifyProfile.putExtra("stateMessage", stateTV.text.toString())
+        toModifyProfile.putExtra("birthday", birthdayTV.text)
+        toModifyProfile.putExtra("sex", sexTV.text.toString())
+
         startActivity(toModifyProfile)
     }
 
@@ -131,8 +126,19 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener {
             if (activity != null) {
                 when (msg.what) {
                     SHOW_PROFILE_INFO -> {
+                        Log.i("되나", "머지?")
                         val profileData = msg.obj as ProfileData
+                        // 로딩 다이얼로그 삭제
                         loadingWeak.get()?.dismiss()
+                        // 액티비티 view 값 지정
+
+                        // 싱글턴에 비트맵을 저장한다 -> 추후 프로필 수정 액티비티에서 사용하도록
+                        // TODO: 싱글턴 말고 intent 로 되지 않아 다음과 같은 방법을 사용... 방법 더 찾아보자
+                        ImageEncodeHelper.bitmapList.clear()
+                        CalendarHelper.timeList.clear()
+                        ImageEncodeHelper.bitmapList.add(profileData.profile_image as Bitmap)
+                        CalendarHelper.timeList.add(profileData.birthday)
+
                         profileIVWeak.get()?.setImageBitmap(profileData.profile_image as Bitmap)
                         nameTVWeak.get()?.text = profileData.name
                         stateTVWeak.get()?.text = profileData.state_message
