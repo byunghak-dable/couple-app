@@ -12,8 +12,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
+import android.provider.ContactsContract
 import android.util.Log
 import androidx.annotation.RequiresApi
+import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import java.io.FileNotFoundException
 import java.io.IOException
 
@@ -23,6 +25,7 @@ class ImageDecodeThread(name: String?, private val context: Context, private val
     companion object {
         const val DECODE_INTO_BITMAP = 1
         const val DECODE_INTO_MULTIPLE_BITMAP = 2
+        const val DECODE_URL_TO_BITMAP = 3
     }
 
     private val TAG = javaClass.name
@@ -42,6 +45,7 @@ class ImageDecodeThread(name: String?, private val context: Context, private val
 
                 when (msg.what) {
 
+                    // 하나의 이미지(Uri)를 bitmap 으로 변환하는 메시지
                     DECODE_INTO_BITMAP -> {
                         val imageUri = msg.obj as Uri
                         val contentResolver: ContentResolver = context.contentResolver
@@ -58,6 +62,7 @@ class ImageDecodeThread(name: String?, private val context: Context, private val
                         }
                     }
 
+                    // 여러 이미지(Uri)를 bitmap 으로 변환하는 메시지
                     DECODE_INTO_MULTIPLE_BITMAP -> {
 
                         val imageUriList = msg.obj as ClipData?
@@ -85,6 +90,20 @@ class ImageDecodeThread(name: String?, private val context: Context, private val
                             message.obj = bitmapList
                             mainHandler.sendMessage(message)
                         }
+                    }
+
+                    DECODE_URL_TO_BITMAP -> {
+                        val imageUrls = msg.obj as ArrayList<String>
+                        val imageBitmaps = ArrayList<Bitmap?>()
+                        val message = Message.obtain()
+
+                        Log.i(TAG, "DECODE_URL_TO_BITMAP : $imageUrls")
+
+                        imageUrls.forEach { imageBitmaps.add(ImageEncodeHelper.getServerImage(it)) }
+
+                        message.what = whichMessage
+                        message.obj = imageBitmaps
+                        mainHandler.sendMessage(message)
                     }
                 }
             }
