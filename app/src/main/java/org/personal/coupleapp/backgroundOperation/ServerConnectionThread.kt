@@ -19,6 +19,7 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
         const val PUT_REQUEST = 3
         const val DELETE_REQUEST = 4
 
+        // get 메소드 관련
         const val REQUEST_SIMPLE_GET_METHOD = 1
         const val REQUEST_STORY_DATA = 2
 
@@ -27,10 +28,12 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
         const val REQUEST_PROFILE_INFO = 3
         const val REQUEST_INSERT_STORY_DATA = 3
 
-
         // put 메소드 관련
         const val REQUEST_PROFILE_UPDATE = 1
         const val REQUEST_UPDATE_STORY_DATA = 2
+
+        // delete 메소드 관련
+        const val DELETE_METHOD = 1
     }
 
     private val TAG = javaClass.name
@@ -58,7 +61,6 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                         val message = Message.obtain(mainHandler)
 
                         when (whichRequest) {
-
                             // 간단한 GET request
                             REQUEST_SIMPLE_GET_METHOD -> {
                                 message.obj = httpRequest.getMethodToServer()
@@ -69,9 +71,7 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                             REQUEST_PROFILE_INFO -> {
                                 message.obj = httpRequest.getProfileFromServer()
                             }
-
                         }
-
                         message.what = whichMessage
                         message.sendToTarget()
                     }
@@ -97,7 +97,6 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                                 message.obj = httpRequest.postStoryToServer(postData, "addStoryData")
                             }
                         }
-
                         message.what = whichMessage
                         message.sendToTarget()
                     }
@@ -111,10 +110,10 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                         val putData: Any
                         Log.i(TAG, "잘오는 지 확인 $whichRequest")
                         when (whichRequest) {
-
                             // 프로필 수정을 하는 경우
                             REQUEST_PROFILE_UPDATE -> {
                                 putData = msgObjHashMap["putData"] as ProfileData
+                                Log.i(TAG, "테스트 $putData")
                                 message.obj = httpRequest.putProfileToServer(putData)
                             }
                             // 스토리 데이터를 수정하는 경우
@@ -123,7 +122,6 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                                 message.obj = httpRequest.postStoryToServer(putData, "modifyStoryData")
                             }
                         }
-
                         message.what = whichMessage
                         message.sendToTarget()
                     }
@@ -137,12 +135,11 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                         val deleteData: Any
 
                         when (whichRequest) {
-                            1 -> {
+                            DELETE_METHOD -> {
                                 deleteData = msgObjHashMap["deleteData"].toString()
                                 message.obj = httpRequest.deleteMethodToServer(deleteData)
                             }
                         }
-
                         message.what = whichMessage
                         message.sendToTarget()
                     }
