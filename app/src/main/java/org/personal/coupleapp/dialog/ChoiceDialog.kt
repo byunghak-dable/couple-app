@@ -14,8 +14,12 @@ class ChoiceDialog : DialogFragment(), DialogInterface.OnClickListener {
 
     private lateinit var dialogListener: DialogListener
     private val menuList: Int by lazy { arguments!!.getInt("arrayResource") }
+    private var itemPosition: Int? = null
+    private var id :Int? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        itemPosition = arguments?.getInt("itemPosition")
+        id = arguments?.getInt("id")
 
         return AlertDialog.Builder(activity)
             .setItems(menuList, this)
@@ -38,10 +42,10 @@ class ChoiceDialog : DialogFragment(), DialogInterface.OnClickListener {
     }
 
     interface DialogListener {
-        fun onChoice(whichDialog: Int, choice: String)
+        fun onChoice(whichDialog: Int, choice: String, itemPosition: Int?, id:Int?)
     }
 
     override fun onClick(dialog: DialogInterface?, which: Int) {
-        dialogListener.onChoice(menuList, activity!!.resources.getStringArray(menuList)[which])
+        dialogListener.onChoice(menuList, activity!!.resources.getStringArray(menuList)[which], itemPosition, id)
     }
 }
