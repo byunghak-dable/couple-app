@@ -21,8 +21,11 @@ import org.personal.coupleapp.MainHomeActivity.CustomHandler.Companion.GET_HOME_
 import org.personal.coupleapp.adapter.ItemClickListener
 import org.personal.coupleapp.adapter.StoryAdapter
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POST_METHOD
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_GET_METHOD
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_STORY_DATA
 import org.personal.coupleapp.data.StoryData
+import org.personal.coupleapp.dialog.ChoiceDialog
 import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.dialog.WarningDialog
 import org.personal.coupleapp.utils.InfiniteScrollListener
@@ -31,12 +34,14 @@ import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.ref.WeakReference
 
 class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener, ItemClickListener,
-    WarningDialog.DialogListener, SwipeRefreshLayout.OnRefreshListener {
+    WarningDialog.DialogListener, SwipeRefreshLayout.OnRefreshListener, ChoiceDialog.DialogListener {
 
     private val TAG = javaClass.name
 
     // 홈 페이지라 domain 만 사용
     private val serverPage = ""
+
+    private val MODIFY_STORY_DATA = 10
 
     // warning dialog 아이디 값
     private val FIRST_VISIT_DIALOG_ID = 1
@@ -92,7 +97,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         // 초기 스토리 데이터 불러왔는지 확인하고 불러오지 않았으면 스토리 데이터 요청
         if (!isInitStoryData) {
             swipeRefreshSR.isRefreshing = true
-            HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, makeItemRangeInJson(0), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
+            HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(0), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
             isInitStoryData = true
         }
     }
@@ -118,7 +123,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         storyRV.layoutManager = layoutManager
         scrollListener = object : InfiniteScrollListener(layoutManager) {
             override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView?) {
-                HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, makeItemRangeInJson(page), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
+                HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(page), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
             }
         }
         storyRV.addOnScrollListener(scrollListener)
@@ -140,15 +145,10 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         serverConnectionThread.looper.quit()
     }
 
-    // 무한 스크롤링 아이템 범위를 정해서 jsonString 으로 변환(서버에 보낼)하는 메소드
-    private fun makeItemRangeInJson(page: Int): String {
-        val jsonObject = JSONObject()
+    // 무한 스크롤링 아이템 범위를 정해서 서버에 보낼 request url build 하는 메소드
+    private fun makeRequestUrl(page: Int): String {
         val coupleColumnID = SharedPreferenceHelper.getInt(this, getText(R.string.coupleColumnID).toString())
-
-        jsonObject.put("coupleID", coupleColumnID)
-        jsonObject.put("page", page)
-
-        return jsonObject.toString()
+        return "$serverPage?what=getStoryData&&coupleID=$coupleColumnID&&page=$page"
     }
 
     //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
@@ -198,7 +198,8 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         if (isOpen) {
 
             handleAnimation(fabClose, fabClockwise, false)
-
+            calendarBtn.isClickable = false
+            storyBtn.isClickable = false
         } else {
 
             handleAnimation(fabOpen, fabAntiClockwise, true)
@@ -228,19 +229,28 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         isOpen = isChileOpen
     }
 
-    //------------------ Refresh 할 때 이벤트 관리하는 메소드 모음 ------------------
+    //------------------ 인터페이스 이벤트 관리하는 메소드 모음 ------------------
     // 새로 고침할 때 리스트 clear, 스크롤리스너 내부 변수 값 초기화, 새로운 데이터 불러오기 실행
     override fun onRefresh() {
         swipeRefreshSR.isRefreshing = true
         scrollListener.resetState()
         storyList.clear()
         storyAdapter.notifyDataSetChanged()
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, makeItemRangeInJson(0), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, makeRequestUrl(0), GET_HOME_STORY_DATA, REQUEST_SIMPLE_GET_METHOD)
     }
 
     //TODO: 리사이클러 뷰 클릭 이벤트 구현
-    override fun onItemClick(itemPosition: Int) {
+    override fun onItemClick(view: View?, itemPosition: Int) {
+        val toolChoiceDialog = ChoiceDialog()
+        val arguments = Bundle()
 
+        arguments.putInt("arrayResource", R.array.modifyOrDelete)
+        arguments.putInt("itemPosition", itemPosition)
+        arguments.putInt("id", storyList[itemPosition].id!!)
+
+
+        toolChoiceDialog.arguments = arguments
+        toolChoiceDialog.show(supportFragmentManager, "CameraOrGalleryDialog")
     }
 
     //------------------ 다이얼로그 fragment 인터페이스 메소드 모음 ------------------
@@ -254,6 +264,30 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         }
     }
 
+    override fun onChoice(whichDialog: Int, choice: String, itemPosition: Int?, id: Int?) {
+        when (choice) {
+            "수정하기" -> modifyStory(itemPosition, id)
+            "삭제하기" -> deleteStory(itemPosition, id)
+        }
+    }
+
+    private fun modifyStory(itemPosition: Int?, storyID: Int?) {
+        val toModifyStory = Intent(this, StoryAddActivity::class.java)
+        toModifyStory.putExtra("storyData", storyList[itemPosition!!])
+        startActivityForResult(toModifyStory, MODIFY_STORY_DATA)
+    }
+
+    private fun deleteStory(itemPosition: Int?, storyID: Int?) {
+        val jsonObject = JSONObject()
+
+        jsonObject.put("what", "deleteStory")
+        jsonObject.put("itemPosition", itemPosition)
+        jsonObject.put("storyID", storyID)
+
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), GET_HOME_STORY_DATA, REQUEST_SIMPLE_POST_METHOD
+        )
+    }
+
     private class CustomHandler(
         activity: Activity,
         val storyList: ArrayList<StoryData>,
@@ -263,6 +297,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
 
         companion object {
             const val GET_HOME_STORY_DATA = 1
+            const val DELETE_STORY_DATA = 1
         }
 
         private val TAG = javaClass.name
@@ -289,6 +324,10 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
                             Log.i(TAG, storyList[0].id.toString())
                             storyAdapter.notifyDataSetChanged()
                         }
+                    }
+
+                    DELETE_STORY_DATA -> {
+                        Log.i(TAG, "delete")
                     }
                 }
             } else {

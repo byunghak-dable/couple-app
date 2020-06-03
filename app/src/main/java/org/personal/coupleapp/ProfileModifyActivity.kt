@@ -22,7 +22,7 @@ import org.personal.coupleapp.backgroundOperation.ImageDecodeHandler
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_BITMAP
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_PROFILE_UPLOAD
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_PROFILE_UPDATE
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.dialog.*
 import org.personal.coupleapp.utils.singleton.CalendarHelper
@@ -173,7 +173,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         // 프로필 데이터 객체를 스레드로 보낸다
         val profileData = ProfileData(userColumnID, imageList[0], name, stateMessage, birthDay, sex)
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, profileData, UPLOAD_PROFILE, REQUEST_PROFILE_UPLOAD)
+        HandlerMessageHelper.serverPutRequest(serverConnectionThread, serverPage, profileData, UPLOAD_PROFILE, REQUEST_PROFILE_UPDATE)
         loadingDialog.show(supportFragmentManager, "Loading")
         Log.i(TAG, "프로필 변경 서버에 업로드 메시지 보냄")
     }
@@ -181,7 +181,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
     //------------------ 다이얼로그 fragment 인터페이스 메소드 모음 ------------------
 
     // 카메라, 갤러리 선택 다이얼로그 결과
-    override fun onChoice(whichDialog: Int, choice: String) {
+    override fun onChoice(whichDialog: Int, choice: String, itemPosition: Int?, id: Int?) {
         when (choice) {
             "카메라" -> cameraPermission()
             "갤러리" -> galleryPermission()
@@ -319,6 +319,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
                 when (msg.what) {
                     UPLOAD_PROFILE -> {
                         loadingDialog?.dismiss()
+                        Log.i(TAG, "테스트 ${msg.obj}")
                         activity.finish()
                     }
                 }

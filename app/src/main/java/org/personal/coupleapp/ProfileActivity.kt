@@ -45,7 +45,10 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener {
     override fun onResume() {
         super.onResume()
         val singleUserID = SharedPreferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, singleUserID, SHOW_PROFILE_INFO, REQUEST_PROFILE_INFO)
+        val whatRequest = "getProfileData"
+        val requestUrl = "$serverPage?what=$whatRequest&&id=$singleUserID"
+
+        HandlerMessageHelper.serverGetRequest(serverConnectionThread, requestUrl, SHOW_PROFILE_INFO, REQUEST_PROFILE_INFO)
         loadingDialog.show(supportFragmentManager, "LoadingDialog")
     }
 
