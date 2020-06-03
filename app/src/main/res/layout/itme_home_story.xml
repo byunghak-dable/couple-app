@@ -38,6 +38,16 @@
             app:layout_constraintLeft_toRightOf="@id/profileImageIV"
             app:layout_constraintTop_toTopOf="@id/profileImageIV" />
 
+        <ImageButton
+            android:id="@+id/settingBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_baseline_more_vert_24"
+            android:backgroundTint="@color/transparency"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/imageSliderIS"/>
+
         <com.denzcoskun.imageslider.ImageSlider
             android:id="@+id/imageSliderIS"
             android:layout_width="match_parent"

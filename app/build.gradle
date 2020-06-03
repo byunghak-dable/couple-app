@@ -34,6 +34,8 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    // swipe layout 사용하기 위해 추가
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
     // 네비게이션 바 구현
     implementation 'com.google.android.material:material:1.1.0'
     // 서버 통신 시 json parse
@@ -43,4 +45,8 @@ dependencies {
     // 구글 맵 라이브러리 추가
     implementation 'com.google.android.gms:play-services-maps:17.0.0'
     implementation 'com.google.android.gms:play-services-location:17.0.0'
+
+    // 리사이클러 뷰 url bitmap 으로 변환할 때 사용
+    implementation 'com.github.bumptech.glide:glide:4.9.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
 }

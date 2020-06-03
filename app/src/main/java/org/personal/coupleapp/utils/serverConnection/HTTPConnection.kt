@@ -36,9 +36,21 @@ class HTTPConnection(private val requestUrl: String) {
         }
         return jsonString
     }
-
-    // POST 메소드 사용, 서버로 데이터를 전송하고 데이터를 받아올 때 사용
+    
     fun postRequest(postJsonString: String): String {
+       return makeRequest(postJsonString, "POST")
+    }
+
+    fun putRequest(postJsonString: String): String {
+        return makeRequest(postJsonString, "PUT")
+    }
+
+    fun deleteRequest(postJsonString: String): String {
+        return makeRequest(postJsonString, "DELETE")
+    }
+
+    // 서버로 데이터를 전송하고 데이터를 받아올 때 사용
+    private fun makeRequest(postJsonString: String, requestMethod:String) : String{
         // HTTPRequest 클래스에서 string 형식으로 requestUrl 를 받아온다
         val url = URL(requestUrl)
         val urlConnection = url.openConnection() as HttpURLConnection
@@ -46,7 +58,7 @@ class HTTPConnection(private val requestUrl: String) {
         Log.i(TAG, postJsonString)
         val postDataByteArray: ByteArray = postJsonString.toByteArray(StandardCharsets.UTF_8)
 
-        urlConnection.requestMethod = "POST"
+        urlConnection.requestMethod = requestMethod
         // 서버로 부터 쓰기 설정
         urlConnection.doOutput = true
         urlConnection.setRequestProperty("Content-Type", "application/json; utf-8")

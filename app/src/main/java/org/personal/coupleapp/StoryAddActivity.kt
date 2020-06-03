@@ -14,7 +14,6 @@ import android.widget.DatePicker
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.activity_modify_profile.*
 import kotlinx.android.synthetic.main.activity_story_add.*
 import kotlinx.android.synthetic.main.activity_story_add.confirmBtn
 import org.personal.coupleapp.StoryAddActivity.CustomHandler.Companion.UPLOAD_STORY_DATA
@@ -24,8 +23,10 @@ import org.personal.coupleapp.adapter.ImageListAdapter
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_BITMAP
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_MULTIPLE_BITMAP
+import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_URL_TO_BITMAP
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_UPLOAD_STORY
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_INSERT_STORY_DATA
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_UPDATE_STORY_DATA
 import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.dialog.ChoiceDialog
 import org.personal.coupleapp.dialog.DatePickerDialog
@@ -52,6 +53,7 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
 
     private var imageList = ArrayList<Bitmap>()
     private val imageListAdapter = ImageListAdapter(imageList)
+    private var storyData: StoryData? = null
 
     // 스토리 날짜(밀리세컨으로 받아서 변환한다)
     private var dateTimeInMills: Int = 0
@@ -62,6 +64,15 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         setListener()
         buildRecyclerView()
         startWorkerThread()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (intent.hasExtra("storyData")) {
+            val storyData1: StoryData? = intent.getParcelableExtra("storyData")
+            storyData = storyData1
+            HandlerMessageHelper.decodeImage(imageDecodeThread, storyData1?.photo_path, DECODE_URL_TO_BITMAP, MULTIPLE_IMAGE)
+        }
     }
 
     override fun onDestroy() {
@@ -123,15 +134,23 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
     }
 
     private fun confirmAddingStory() {
+        val storyID: Int? = storyData?.id
         val coupleColumnID = SharedPreferenceHelper.getInt(this, getText(R.string.coupleColumnID).toString())
         val title = titleED.text.toString()
         val description = descriptionED.text.toString()
         val date = dateTimeInMills
 
-        // 스토리 데이터 객체를 스레드로 보낸다
-        val storyData = StoryData(coupleColumnID, title, description, date, imageList as ArrayList<Any>)
+        Log.i(TAG, "StoryID : $storyID")
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, storyData, UPLOAD_STORY_DATA, REQUEST_UPLOAD_STORY)
+        // 스토리 데이터 객체를 스레드로 보낸다
+        storyData = StoryData(storyID, coupleColumnID, title, description, date, imageList as ArrayList<Any>)
+
+        if (storyID == null) {
+            HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, storyData!!, UPLOAD_STORY_DATA, REQUEST_INSERT_STORY_DATA)
+        } else {
+            HandlerMessageHelper.serverPutRequest(serverConnectionThread, serverPage, storyData!!, UPLOAD_STORY_DATA, REQUEST_UPDATE_STORY_DATA)
+        }
+
         loadingDialog.show(supportFragmentManager, "Loading")
         Log.i(TAG, "프로필 변경 서버에 업로드 메시지 보냄")
     }
@@ -144,7 +163,7 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
 
 
     //------------------ 다이얼로그 fragment 인터페이스 메소드 모음 ------------------
-    override fun onChoice(whichDialog: Int, choice: String) {
+    override fun onChoice(whichDialog: Int, choice: String, itemPosition: Int?, id: Int?) {
         when (choice) {
             "카메라" -> openCamera()
             "갤러리" -> openGallery()
@@ -184,7 +203,7 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
                         val clipData = data.clipData
                         if (clipData != null) {
                             loadingDialog.show(supportFragmentManager, "Loading")
-                            HandlerMessageHelper.decodeMultipleImage(imageDecodeThread, data.clipData, DECODE_INTO_MULTIPLE_BITMAP, MULTIPLE_IMAGE)
+                            HandlerMessageHelper.decodeImage(imageDecodeThread, data.clipData, DECODE_INTO_MULTIPLE_BITMAP, MULTIPLE_IMAGE)
                         } else {
                             HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, SINGLE_IMAGE)
                         }
@@ -234,6 +253,7 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         companion object {
             const val SINGLE_IMAGE = 1
             const val MULTIPLE_IMAGE = 2
+            const val URL_TO_BITMAP = 3
         }
 
         private val TAG = javaClass.name

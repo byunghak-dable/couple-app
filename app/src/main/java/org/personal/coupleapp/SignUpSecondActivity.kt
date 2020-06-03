@@ -15,7 +15,7 @@ import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.CHECK
 import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.GET_INVITE_CODE
 import org.personal.coupleapp.SignUpSecondActivity.CustomHandler.Companion.CHECK_CONNECTE_COMPLETED
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POSTING
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POST_METHOD
 import org.personal.coupleapp.dialog.InformDialog
 import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
@@ -84,7 +84,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         postJsonObject.put("what", "getInvitationCode")
         postJsonObject.put("singleUserID", userColumnID)
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_SIMPLE_POSTING)
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_SIMPLE_POST_METHOD)
         Log.i(TAG, "초대코드 서버로부터 받아오는 요청 보냄")
         Log.i("thread-test", "onResume 끝")
     }
@@ -125,7 +125,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         jsonObject.put("invitationReceiverID", invitationSenderID)
         jsonObject.put("invitationSenderCode", parseInt(opponentCodeED.text.toString()))
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), CHECK_CONNECTE_COMPLETED, REQUEST_SIMPLE_POSTING)
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), CHECK_CONNECTE_COMPLETED, REQUEST_SIMPLE_POST_METHOD)
         Log.i(TAG, "커플 DB에 업로드")
     }
 
@@ -137,7 +137,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         jsonObject.put("what", "checkConnection")
         jsonObject.put("id", myColumnID)
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), CHECK_CONNECTION, REQUEST_SIMPLE_POSTING)
+        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), CHECK_CONNECTION, REQUEST_SIMPLE_POST_METHOD)
         Log.i(TAG, "상대방과의 연결확인")
         Log.i(TAG, jsonObject.toString())
     }

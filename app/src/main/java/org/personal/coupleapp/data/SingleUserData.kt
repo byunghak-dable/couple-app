@@ -1,3 +1,5 @@
 package org.personal.coupleapp.data
 
-data class SingleUserData(val email: String, val password: String, val partnerConnected: Boolean)
+import android.graphics.Bitmap
+
+data class SingleUserData(val id: Int, val Image: Bitmap,val name: String, val state_message: String, val birthday:String, val sex:String)

@@ -26,4 +26,9 @@
         <item>카메라</item>
         <item>갤러리</item>
     </string-array>
+
+    <string-array name="modifyOrDelete">
+        <item>수정하기</item>
+        <item>삭제하기</item>
+    </string-array>
 </resources>
