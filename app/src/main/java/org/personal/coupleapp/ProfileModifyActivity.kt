@@ -57,7 +57,7 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
     private val imageList: ArrayList<Bitmap> = ArrayList()
 
     // 생일 정보를 담고 있는 변수
-    private var birthdayInMills: Int? = null
+    private var birthdayInMills: Long? = null
 
     // 카메라를 통해서 가져오는 이미지
     private lateinit var cameraImage: Uri
