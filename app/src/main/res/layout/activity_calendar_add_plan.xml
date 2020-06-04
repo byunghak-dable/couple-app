@@ -26,7 +26,7 @@
 
     <!--    저장하기 버튼-->
     <ImageButton
-        android:id="@+id/addPlanBtn"
+        android:id="@+id/confirmBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="20dp"
@@ -407,7 +407,7 @@
                 android:paddingTop="13dp"
                 android:paddingEnd="10dp"
                 android:paddingBottom="13dp"
-                android:text="@string/nothing"
+                android:text="@string/notDO"
                 android:textAlignment="textEnd"
                 android:textSize="15sp"
                 android:textStyle="bold"
