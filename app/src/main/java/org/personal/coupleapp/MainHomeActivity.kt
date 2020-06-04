@@ -17,11 +17,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
 import org.json.JSONObject
+import org.personal.coupleapp.MainHomeActivity.CustomHandler.Companion.DELETE_STORY_DATA
 import org.personal.coupleapp.MainHomeActivity.CustomHandler.Companion.GET_HOME_STORY_DATA
 import org.personal.coupleapp.adapter.ItemClickListener
 import org.personal.coupleapp.adapter.StoryAdapter
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POST_METHOD
+import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.DELETE_METHOD
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_GET_METHOD
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_STORY_DATA
 import org.personal.coupleapp.data.StoryData
@@ -31,6 +32,7 @@ import org.personal.coupleapp.dialog.WarningDialog
 import org.personal.coupleapp.utils.InfiniteScrollListener
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
+import java.lang.Integer.parseInt
 import java.lang.ref.WeakReference
 
 class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener, ItemClickListener,
@@ -198,13 +200,9 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         if (isOpen) {
 
             handleAnimation(fabClose, fabClockwise, false)
-            calendarBtn.isClickable = false
-            storyBtn.isClickable = false
         } else {
 
             handleAnimation(fabOpen, fabAntiClockwise, true)
-            calendarBtn.isClickable
-            storyBtn.isClickable
         }
     }
 
@@ -227,6 +225,8 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         expandableAddBtn.startAnimation(parentAnimation)
 
         isOpen = isChileOpen
+        calendarBtn.isClickable = isChileOpen
+        storyBtn.isClickable = isChileOpen
     }
 
     //------------------ 인터페이스 이벤트 관리하는 메소드 모음 ------------------
@@ -236,7 +236,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         scrollListener.resetState()
         storyList.clear()
         storyAdapter.notifyDataSetChanged()
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, makeRequestUrl(0), GET_HOME_STORY_DATA, REQUEST_SIMPLE_GET_METHOD)
+        HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(0), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
     }
 
     //TODO: 리사이클러 뷰 클릭 이벤트 구현
@@ -284,8 +284,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         jsonObject.put("itemPosition", itemPosition)
         jsonObject.put("storyID", storyID)
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, jsonObject.toString(), GET_HOME_STORY_DATA, REQUEST_SIMPLE_POST_METHOD
-        )
+        HandlerMessageHelper.serverDeleteRequest(serverConnectionThread, serverPage, jsonObject.toString(), DELETE_STORY_DATA, DELETE_METHOD)
     }
 
     private class CustomHandler(
@@ -297,7 +296,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
 
         companion object {
             const val GET_HOME_STORY_DATA = 1
-            const val DELETE_STORY_DATA = 1
+            const val DELETE_STORY_DATA = 2
         }
 
         private val TAG = javaClass.name
@@ -316,7 +315,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
                     GET_HOME_STORY_DATA -> {
                         swipeRefreshSRWeak.get()?.isRefreshing = false
                         if (msg.obj == null) {
-                            Log.i("확인", "ㅛㄷㄴ")
+                            Log.i(TAG, "데이터 없음")
                         } else {
                             val fetchedStoryList = msg.obj as ArrayList<StoryData>
                             fetchedStoryList.forEach { storyList.add(it) }
@@ -327,7 +326,8 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
                     }
 
                     DELETE_STORY_DATA -> {
-                        Log.i(TAG, "delete")
+                        storyList.removeAt(parseInt(msg.obj.toString()))
+                        storyAdapter.notifyDataSetChanged()
                     }
                 }
             } else {
