@@ -5,10 +5,12 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
 import android.util.Log
+import org.personal.coupleapp.data.PlanData
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.utils.serverConnection.HTTPRequest
-import java.lang.Integer.parseInt
+import org.personal.coupleapp.utils.serverConnection.HTTPRequest.Companion.POST
+import org.personal.coupleapp.utils.serverConnection.HTTPRequest.Companion.PUT
 
 class ServerConnectionThread(name: String?, private val mainHandler: Handler) : HandlerThread(name) {
 
@@ -17,20 +19,25 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
         const val GET_REQUEST = 1
         const val POST_REQUEST = 2
         const val PUT_REQUEST = 3
-        const val DELETE_REQUEST = 4
+        const val REQUEST_DELETE = 4
+
 
         // get 메소드 관련
         const val REQUEST_SIMPLE_GET_METHOD = 1
         const val REQUEST_STORY_DATA = 2
+        const val REQUEST_PROFILE_INFO = 3
+        const val REQUEST_COUPLE_PROFILE = 4
+        const val REQUEST_PLAN_DATA = 5
 
         // post 메소드 관련
         const val REQUEST_SIMPLE_POST_METHOD = 1
-        const val REQUEST_PROFILE_INFO = 3
-        const val REQUEST_INSERT_STORY_DATA = 3
+        const val REQUEST_INSERT_STORY_DATA = 2
+        const val REQUEST_INSERT_PLAN_DATA = 3
 
         // put 메소드 관련
         const val REQUEST_PROFILE_UPDATE = 1
         const val REQUEST_UPDATE_STORY_DATA = 2
+        const val REQUEST_UPDATE_PLAN_DATA = 3
 
         // delete 메소드 관련
         const val DELETE_METHOD = 1
@@ -71,6 +78,14 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                             REQUEST_PROFILE_INFO -> {
                                 message.obj = httpRequest.getProfileFromServer()
                             }
+
+                            REQUEST_COUPLE_PROFILE -> {
+                                message.obj = httpRequest.getCoupleProfile()
+                            }
+
+                            REQUEST_PLAN_DATA -> {
+                                message.obj = httpRequest.getPlanData()
+                            }
                         }
                         message.what = whichMessage
                         message.sendToTarget()
@@ -93,8 +108,12 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                             }
                             REQUEST_INSERT_STORY_DATA -> {
                                 postData = msgObjHashMap["postData"] as StoryData
-                                Log.i(TAG, postData.toString())
-                                message.obj = httpRequest.postStoryToServer(postData, "addStoryData")
+                                message.obj = httpRequest.handleStoryInServer(POST, postData, "addStoryData")
+                            }
+
+                            REQUEST_INSERT_PLAN_DATA -> {
+                                postData = msgObjHashMap["postData"] as PlanData
+                                message.obj = httpRequest.handlePlanInServer(POST, postData, "addPlanData")
                             }
                         }
                         message.what = whichMessage
@@ -119,14 +138,19 @@ class ServerConnectionThread(name: String?, private val mainHandler: Handler) : 
                             // 스토리 데이터를 수정하는 경우
                             REQUEST_UPDATE_STORY_DATA -> {
                                 putData = msgObjHashMap["putData"] as StoryData
-                                message.obj = httpRequest.postStoryToServer(putData, "modifyStoryData")
+                                message.obj = httpRequest.handleStoryInServer(PUT, putData, "modifyStoryData")
+                            }
+
+                            REQUEST_UPDATE_PLAN_DATA -> {
+                                putData = msgObjHashMap["putData"] as PlanData
+                                message.obj = httpRequest.handlePlanInServer(PUT, putData, "modifyPlanData")
                             }
                         }
                         message.what = whichMessage
                         message.sendToTarget()
                     }
 
-                    DELETE_REQUEST -> {
+                    REQUEST_DELETE -> {
                         // HashMap 으로 보낸 msg.obj 객체 캐스팅
                         val msgObjHashMap = msg.obj as HashMap<*, *>
                         val serverPage = msgObjHashMap["serverPage"].toString()
