@@ -1,5 +1,6 @@
 package org.personal.coupleapp.utils.serverConnection
 
+import org.personal.coupleapp.data.PlanData
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.data.StoryData
 
@@ -10,10 +11,11 @@ interface HTTPOutPut {
     fun getMethodToServer(): String
     fun getProfileFromServer(): ProfileData
     fun getStoryFromServer(): ArrayList<StoryData>?
+    fun getCoupleProfile(): HashMap<String, ProfileData>
+    fun getPlanData() : HashMap<String, Any>?
 
     // POST 메소드
     fun postMethodToServer(postJsonString: String): String
-    fun postStoryToServer(storyData: StoryData, what: String): String
 
     // PUT 메소드
     fun putMethodToServer(postJsonString: String): String
@@ -21,4 +23,8 @@ interface HTTPOutPut {
 
     // DELETE 메소드
     fun deleteMethodToServer(postJsonString: String): String
+
+    // POST 혹은 PUT 메소드
+    fun handleStoryInServer(method: Int, storyData: StoryData, what: String): String?
+    fun handlePlanInServer(method: Int, planData: PlanData, what: String): String?
 }

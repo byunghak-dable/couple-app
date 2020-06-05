@@ -15,7 +15,6 @@ import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_story_add.*
-import kotlinx.android.synthetic.main.activity_story_add.confirmBtn
 import org.personal.coupleapp.StoryAddActivity.CustomHandler.Companion.UPLOAD_STORY_DATA
 import org.personal.coupleapp.StoryAddActivity.MultipleImageHandler.Companion.MULTIPLE_IMAGE
 import org.personal.coupleapp.StoryAddActivity.MultipleImageHandler.Companion.SINGLE_IMAGE
@@ -36,7 +35,6 @@ import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.ref.WeakReference
 
-@Suppress("UNCHECKED_CAST")
 class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog.DialogListener, DatePickerDialog.DatePickerListener {
 
     private val TAG = javaClass.name
@@ -56,7 +54,7 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
     private var storyData: StoryData? = null
 
     // 스토리 날짜(밀리세컨으로 받아서 변환한다)
-    private var dateTimeInMills: Int = 0
+    private var dateTimeInMills: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -235,8 +233,9 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
             if (activity != null) {
                 when (msg.what) {
                     UPLOAD_STORY_DATA -> {
-                        loadingDialog?.dismiss()
+                        `loadingDialog`?.dismiss()
                         Log.i("되나?", msg.obj.toString())
+                        activity.finish()
                     }
                 }
                 // 액티비티가 destroy 되면 바로 빠져나오도록
