@@ -8,10 +8,11 @@ import android.util.Log
 import org.personal.coupleapp.data.PlanData
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.data.StoryData
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
 import org.personal.coupleapp.utils.serverConnection.HTTPRequest
 import org.personal.coupleapp.utils.serverConnection.HTTPRequest.Companion.POST
 
-class HTTPConnectionThread(name: String?, private val httpConnectionInterface: HTTPConnectionInterface) : HandlerThread(name) {
+class HTTPConnectionThread(name: String?, private val httpConnectionListener: HTTPConnectionListener) : HandlerThread(name) {
 
     // msg.what, msg.arg1 의 value 값 선언
     companion object {
@@ -161,7 +162,7 @@ class HTTPConnectionThread(name: String?, private val httpConnectionInterface: H
                         }
                     }
                 }
-                httpConnectionInterface.onHttpRespond(httpRespondData)
+                httpConnectionListener.onHttpRespond(httpRespondData)
             }
         }
     }
