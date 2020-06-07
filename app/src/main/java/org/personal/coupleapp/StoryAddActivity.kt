@@ -1,35 +1,36 @@
 package org.personal.coupleapp
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Bitmap
-import android.os.Build
+import android.os.*
 import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
 import android.util.Log
 import android.view.View
 import android.widget.DatePicker
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import kotlinx.android.synthetic.main.activity_story.*
 import kotlinx.android.synthetic.main.activity_story_add.*
 import org.personal.coupleapp.StoryAddActivity.CustomHandler.Companion.UPLOAD_STORY_DATA
 import org.personal.coupleapp.StoryAddActivity.MultipleImageHandler.Companion.MULTIPLE_IMAGE
 import org.personal.coupleapp.StoryAddActivity.MultipleImageHandler.Companion.SINGLE_IMAGE
 import org.personal.coupleapp.adapter.ImageListAdapter
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_INSERT_STORY_DATA
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_BITMAP
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_MULTIPLE_BITMAP
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_URL_TO_BITMAP
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_INSERT_STORY_DATA
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_UPDATE_STORY_DATA
 import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.dialog.ChoiceDialog
 import org.personal.coupleapp.dialog.DatePickerDialog
 import org.personal.coupleapp.dialog.LoadingDialog
+import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
@@ -45,7 +46,7 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
     private val CAMERA_REQUEST_CODE = 1000
     private val GALLERY_REQUEST_CODE = 1001
 
-    private lateinit var serverConnectionThread: ServerConnectionThread
+    private lateinit var httpConnectionService: HTTPConnectionService
     private lateinit var imageDecodeThread: ImageDecodeThread
     private val loadingDialog = LoadingDialog()
 
@@ -73,6 +74,16 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        startBoundService()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         stopWorkerThread()
@@ -94,20 +105,22 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         storyImageRV.adapter = imageListAdapter
     }
 
+    // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
+    private fun startBoundService() {
+        val startService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startService, connection, BIND_AUTO_CREATE)
+    }
+
     // 백그라운드 스레드 실행
     private fun startWorkerThread() {
-        val serverMainHandler = CustomHandler(this, loadingDialog)
         val decodeMainHandler = MultipleImageHandler(imageList, imageListAdapter, loadingDialog)
-        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
         imageDecodeThread = ImageDecodeThread("ImageDecodeThread", this, decodeMainHandler)
-        serverConnectionThread.start()
         imageDecodeThread.start()
     }
 
     // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
     private fun stopWorkerThread() {
         Log.i(TAG, "thread 종료")
-        serverConnectionThread.looper.quit()
         imageDecodeThread.looper.quit()
     }
 
@@ -144,9 +157,9 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         storyData = StoryData(storyID, coupleColumnID, title, description, date, imageList as ArrayList<Any>)
 
         if (storyID == null) {
-            HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, storyData!!, UPLOAD_STORY_DATA, REQUEST_INSERT_STORY_DATA)
+            httpConnectionService.serverPostRequest(serverPage, storyData!!, REQUEST_INSERT_STORY_DATA, UPLOAD_STORY_DATA)
         } else {
-            HandlerMessageHelper.serverPutRequest(serverConnectionThread, serverPage, storyData!!, UPLOAD_STORY_DATA, REQUEST_UPDATE_STORY_DATA)
+            httpConnectionService.serverPutRequest(serverPage, storyData!!, REQUEST_INSERT_STORY_DATA, UPLOAD_STORY_DATA)
         }
 
         loadingDialog.show(supportFragmentManager, "Loading")
@@ -206,6 +219,38 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
                             HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, SINGLE_IMAGE)
                         }
                     }
+                }
+            }
+        }
+    }
+
+
+    // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
+    /*
+    바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
+    서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
+     */
+    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
+            httpConnectionService = binder.getService()!!
+            httpConnectionService.setOnHttpRespondListener(this)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i(TAG, "바운드 서비스 연결 종료")
+        }
+
+        override fun onHttpRespond(responseData: HashMap<*, *>) {
+            // 메인 UI 작업을 담당하는 핸들러 -> 액티비티가 아닌 ServiceConnection 의 추상 클래스 내부에서 UI 를 다루기 위해 생성
+            val handler = Handler(Looper.getMainLooper())
+
+            when (responseData["whichRespond"] as Int) {
+                // 로그인을 할 경우
+                UPLOAD_STORY_DATA -> {
+                    loadingDialog.dismiss()
+                    Log.i("되나?", responseData["respondData"].toString())
+                    this@StoryAddActivity.finish()
                 }
             }
         }
