@@ -83,6 +83,11 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startBoundService()
     }
 
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
+    }
+
     override fun onResume() {
         super.onResume()
         bottomNavigation.selectedItemId = R.id.home
