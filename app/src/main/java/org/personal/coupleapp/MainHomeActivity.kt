@@ -37,14 +37,15 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     // 홈 페이지라 domain 만 사용
     private val serverPage = ""
 
-    // warning dialog 아이디 값
-    private val FIRST_VISIT_DIALOG_ID = 1
-
     // httpConnectionService 바인드 객체
     private lateinit var httpConnectionService: HTTPConnectionService
+
     // 서버 통신관련 변수
     private val GET_HOME_STORY_DATA = 1
     private val DELETE_STORY_DATA = 2
+
+    // warning dialog 아이디 값
+    private val FIRST_VISIT_DIALOG_ID = 1
 
     // 스토리 리스트(리사이클러 뷰) 관련 변수
     private val storyList = ArrayList<StoryData>()
@@ -69,7 +70,6 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
             val warningDialog = WarningDialog()
             val arguments = Bundle()
 
-            arguments.putInt("dialogID", FIRST_VISIT_DIALOG_ID)
             arguments.putString("title", "환영합니다")
             arguments.putString("message", "프로필을 설정해주세요.\n확인을 누르면 프로필 설정창으로 이동합니다")
 
@@ -229,13 +229,9 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
 
     //------------------ 다이얼로그 fragment 인터페이스 메소드 모음 ------------------
     // 롹인 버튼만 있는 warning 다이얼로그 이벤트 메소드
-    override fun applyConfirm(id: Int) {
-        when (id) {
-            FIRST_VISIT_DIALOG_ID -> {
-                val toProfileModify = Intent(this, ProfileModifyActivity::class.java)
-                startActivity(toProfileModify)
-            }
-        }
+    override fun applyConfirm(id: Int?) {
+        val toProfileModify = Intent(this, ProfileModifyActivity::class.java)
+        startActivity(toProfileModify)
     }
 
     override fun onChoice(whichDialog: Int, choice: String, itemPosition: Int?, id: Int?) {
