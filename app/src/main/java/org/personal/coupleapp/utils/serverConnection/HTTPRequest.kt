@@ -42,6 +42,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
     override fun getProfileFromServer(): ProfileData {
         val gson = Gson()
         val jsonString: String = hTTPConnection.getRequest()
+        Log.i("이미지 에러", jsonString)
         val profileData = gson.fromJson(jsonString, ProfileData::class.java)
         val profileImageBitmap = ImageEncodeHelper.getServerImage(profileData.profile_image.toString())
         profileData.profile_image = profileImageBitmap
@@ -52,6 +53,8 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
     override fun getStoryFromServer(): ArrayList<StoryData>? {
         val gson = Gson()
         val jsonString: String = hTTPConnection.getRequest()
+
+        Log.i(TAG, "getStoryFromServer : $jsonString")
 
         return if (jsonString != "false") {
             gson.fromJson(jsonString, object : TypeToken<ArrayList<StoryData>>() {}.type)
@@ -123,6 +126,20 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         return jsonString.replace("\"", "")
     }
 
+    override fun signIn(postJsonString: String): ProfileData? {
+        val profileData : ProfileData?
+        val gson = Gson()
+        val jsonString = hTTPConnection.postRequest(postJsonString)
+
+        profileData = if (jsonString != "false") {
+            gson.fromJson(jsonString, ProfileData::class.java)
+        } else {
+            null
+        }
+
+        return profileData
+    }
+
     //------------------ PUT 관련 메소드 모음 ------------------
 
     override fun putMethodToServer(postJsonString: String): String {
@@ -132,7 +149,8 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
     }
 
     // 프로파일 정보를 서버로 보내는 메소드
-    override fun putProfileToServer(profileData: ProfileData): String {
+    override fun putProfileToServer(profileData: ProfileData): ProfileData {
+        val returnedProfileData: ProfileData
         val jsonString: String
         val gson = Gson()
         val postJson: String
@@ -145,8 +163,8 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
         // 결과를 받는다(성공 여부)
         jsonString = hTTPConnection.putRequest(postJson)
-        Log.i(TAG, jsonString)
-        return jsonString
+        returnedProfileData = gson.fromJson(jsonString, ProfileData::class.java)
+        return returnedProfileData
     }
 
     //------------------ DELETE 관련 메소드 모음 ------------------
