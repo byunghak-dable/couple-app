@@ -1,6 +1,5 @@
 package org.personal.coupleapp
 
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -13,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.activity_story.*
-import org.personal.coupleapp.adapter.ItemClickListener
+import org.personal.coupleapp.interfaces.ItemClickListener
 import org.personal.coupleapp.adapter.StoryGridAdapter
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_COUPLE_PROFILE
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_STORY_DATA

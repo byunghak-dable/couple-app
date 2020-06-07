@@ -16,7 +16,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
 import org.json.JSONObject
-import org.personal.coupleapp.adapter.ItemClickListener
+import org.personal.coupleapp.interfaces.ItemClickListener
 import org.personal.coupleapp.adapter.StoryAdapter
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.DELETE_FROM_SERVER
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_STORY_DATA
@@ -29,7 +29,8 @@ import org.personal.coupleapp.utils.InfiniteScrollListener
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
 
-class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener, ItemClickListener,
+class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener,
+    ItemClickListener,
     WarningDialog.DialogListener, SwipeRefreshLayout.OnRefreshListener, ChoiceDialog.DialogListener {
 
     private val TAG = javaClass.name

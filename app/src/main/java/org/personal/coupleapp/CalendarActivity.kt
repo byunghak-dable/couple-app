@@ -13,7 +13,7 @@ import com.prolificinteractive.materialcalendarview.CalendarMode
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import com.prolificinteractive.materialcalendarview.OnDateSelectedListener
 import kotlinx.android.synthetic.main.activity_calendar.*
-import org.personal.coupleapp.adapter.ItemClickListener
+import org.personal.coupleapp.interfaces.ItemClickListener
 import org.personal.coupleapp.adapter.PlanAdapter
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_PLAN_DATA
 import org.personal.coupleapp.data.PlanData
