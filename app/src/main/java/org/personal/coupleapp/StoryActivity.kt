@@ -1,39 +1,30 @@
 package org.personal.coupleapp
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
+import android.os.*
 import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
 import android.util.Log
 import android.view.View
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.activity_story.*
-import kotlinx.android.synthetic.main.activity_story.storyRV
-import kotlinx.android.synthetic.main.activity_story.swipeRefreshSR
-import org.json.JSONObject
-import org.personal.coupleapp.StoryActivity.CustomHandler.Companion.GET_COUPLE_PROFILE_DATA
-import org.personal.coupleapp.StoryActivity.CustomHandler.Companion.GET_STORY_DATA
 import org.personal.coupleapp.adapter.ItemClickListener
 import org.personal.coupleapp.adapter.StoryGridAdapter
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_COUPLE_PROFILE
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_GET_METHOD
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_STORY_DATA
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_COUPLE_PROFILE
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_STORY_DATA
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.data.StoryData
+import org.personal.coupleapp.dialog.LoadingDialog
+import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.InfiniteScrollListener
 import org.personal.coupleapp.utils.singleton.CalendarHelper
-import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import org.w3c.dom.Text
-import java.lang.ref.WeakReference
 
 class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListener, SwipeRefreshLayout.OnRefreshListener {
 
@@ -41,10 +32,11 @@ class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListen
 
     private val serverPage = "Story"
 
-    // 서버 통신 관련 스레드 생성
-    private lateinit var serverConnectionThread: ServerConnectionThread
+    private lateinit var httpConnectionService: HTTPConnectionService
+    private val GET_STORY_DATA = 1
+    private val GET_COUPLE_PROFILE_DATA = 2
 
-    private var isInitStoryData = false
+    private val loadingDialog by lazy { LoadingDialog() }
 
     // 리사이클러 뷰 어뎁터 -> 스토리 데이터의 처음 사진만을 보여준다
     private val storyList = ArrayList<StoryData>()
@@ -56,24 +48,16 @@ class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListen
         setContentView(R.layout.activity_story)
         setListener()
         buildRecyclerView()
-        startWorkerThread()
     }
 
-    override fun onResume() {
-        super.onResume()
-
-        if (!isInitStoryData) {
-            val profileRequestUrl = "$serverPage?coupleID"
-            swipeRefreshSR.isRefreshing = true
-            HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(0, "getCoupleProfile"), GET_COUPLE_PROFILE_DATA, REQUEST_COUPLE_PROFILE)
-            HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(0, "getStoryData"), GET_STORY_DATA, REQUEST_STORY_DATA)
-            isInitStoryData = true
-        }
+    override fun onStart() {
+        super.onStart()
+        startBoundService()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopWorkerThread()
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
     }
 
     // onCreate 보기 편하도록 클릭 리스너 모아두는 메소드
@@ -89,24 +73,17 @@ class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListen
         storyRV.layoutManager = gridLayoutManager
         scrollListener = object : InfiniteScrollListener(gridLayoutManager) {
             override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView?) {
-                HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(page, "getStoryData"), GET_STORY_DATA, REQUEST_STORY_DATA)
+                httpConnectionService.serverGetRequest(makeRequestUrl(page, "getStoryData"), REQUEST_STORY_DATA, GET_STORY_DATA)
             }
         }
         storyRV.addOnScrollListener(scrollListener)
         storyRV.adapter = storyGridAdapter
     }
 
-    // 백그라운드 스레드 실행
-    private fun startWorkerThread() {
-        val mainHandler = CustomHandler(this, senderProfileIV, senderNameTV,
-            senderBirthdayTV, receiverProfileIV, receiverNameTV,receiverBirthdayTV, storyList, storyGridAdapter, swipeRefreshSR)
-        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", mainHandler)
-        serverConnectionThread.start()
-    }
-
-    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
-    private fun stopWorkerThread() {
-        serverConnectionThread.looper.quit()
+    // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
+    private fun startBoundService() {
+        val startService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startService, connection, BIND_AUTO_CREATE)
     }
 
     // 무한 스크롤링 아이템 범위를 정해서 서버에 보낼 request url build 하는 메소드
@@ -138,88 +115,84 @@ class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListen
         Log.i(TAG, storyList[itemPosition].id.toString())
     }
 
+    // 리사이클러 뷰 새로 고침을 하게되면 스토리 데이터를 새로 가져온다
     override fun onRefresh() {
         swipeRefreshSR.isRefreshing = true
         scrollListener.resetState()
         storyList.clear()
-        storyGridAdapter.notifyDataSetChanged()
-        HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(0, "getStoryData"), GET_STORY_DATA, REQUEST_STORY_DATA)
+        httpConnectionService.serverGetRequest(makeRequestUrl(0, "getStoryData"), REQUEST_STORY_DATA, GET_STORY_DATA)
     }
 
-    // 프로필 사진 업로드,
-    private class CustomHandler(
-        activity: Activity,
-        senderProfileIV: ImageView,
-        senderNameTV: TextView,
-        senderBirthdayTV :TextView,
-        receiverProfileIV: ImageView,
-        receiverNameTV: TextView,
-        receiverBirthdayTV:TextView,
-        val storyList: ArrayList<StoryData>,
-        val storyGridAdapter: StoryGridAdapter,
-        swipeRefreshSR: SwipeRefreshLayout
-    ) : Handler() {
-
-        companion object {
-            const val GET_STORY_DATA = 1
-            const val GET_COUPLE_PROFILE_DATA = 2
+    // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
+    /*
+    바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
+    서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
+     */
+    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
+            httpConnectionService = binder.getService()!!
+            httpConnectionService.setOnHttpRespondListener(this)
+            getInitData()
         }
 
-        private val TAG = javaClass.name
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i(TAG, "바운드 서비스 연결 종료")
+        }
 
-        private val activityWeakReference: WeakReference<Activity> = WeakReference(activity)
-        private val swipeRefreshSRWeak: WeakReference<SwipeRefreshLayout> = WeakReference(swipeRefreshSR)
-        private val senderProfileIVWeak: WeakReference<ImageView> = WeakReference(senderProfileIV)
-        private val senderNameTVWeak: WeakReference<TextView> = WeakReference(senderNameTV)
-        private val senderBirthdayTVWeak: WeakReference<TextView> = WeakReference(senderBirthdayTV)
-        private val receiverProfileIVWeak: WeakReference<ImageView> = WeakReference(receiverProfileIV)
-        private val receiverNameTVWeak: WeakReference<TextView> = WeakReference(receiverNameTV)
-        private val receiverBirthdayTVWeak: WeakReference<TextView> = WeakReference(receiverBirthdayTV)
+        override fun onHttpRespond(responseData: HashMap<*, *>) {
+            // 메인 UI 작업을 담당하는 핸들러 -> 액티비티가 아닌 ServiceConnection 의 추상 클래스 내부에서 UI 를 다루기 위해 생성
+            val handler = Handler(Looper.getMainLooper())
 
+            when (responseData["whichRespond"] as Int) {
+                // 로그인을 할 경우
+                GET_STORY_DATA -> {
+                    swipeRefreshSR.isRefreshing = false
 
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            val activity = activityWeakReference.get()
-
-            if (activity != null) {
-                when (msg.what) {
-                    // 스토리 받는 메시지
-                    GET_STORY_DATA -> {
-                        swipeRefreshSRWeak.get()?.isRefreshing = false
-
-                        if (msg.obj == null) {
-                            Log.i(TAG, "데이터 더이상 없음")
-                        } else {
-                            val fetchedStoryList = msg.obj as ArrayList<StoryData>
+                    when (responseData["respondData"]) {
+                        null -> {
+                            Log.i(TAG, "onHttpRespond : 데이터 더이상 없음")
+                        }
+                        else -> {
+                            val fetchedStoryList = responseData["respondData"] as ArrayList<StoryData>
                             fetchedStoryList.forEach { storyList.add(it) }
-
-                            Log.i(TAG, storyList[0].id.toString())
-                            storyGridAdapter.notifyDataSetChanged()
+                            handler.post { storyGridAdapter.notifyDataSetChanged() }
+                            Log.i(TAG, "onHttpRespond : 스토리 데이터 받아옴")
                         }
                     }
+                }
+                GET_COUPLE_PROFILE_DATA -> {
+                    loadingDialog.dismiss()
+                    // 커플 데이터를 hashmap 으로 받는다
+                    val coupleData = responseData["respondData"] as HashMap<*, *>
+                    val senderData: ProfileData = coupleData["senderProfile"] as ProfileData
+                    val receiverData: ProfileData = coupleData["receiverProfile"] as ProfileData
 
-                    // 커플 프로필 데이터 받는 메시지
-                    GET_COUPLE_PROFILE_DATA -> {
-                        // 커플 데이터를 hashmap 으로 받는다
-                        val coupleData = msg.obj as HashMap<*, *>
-                        val senderData: ProfileData = coupleData["senderProfile"] as ProfileData
-                        val receiverData: ProfileData = coupleData["receiverProfile"] as ProfileData
-
+                    // 커플 프로필 UI 작업
+                    handler.post {
                         // sender 프로필 정보 입력
-                        Glide.with(activity).load(senderData.profile_image).into(senderProfileIVWeak.get()!!)
-                        senderNameTVWeak.get()?.text = senderData.name
-                        senderBirthdayTVWeak.get()?.text = CalendarHelper.timeInMillsToDate(senderData.birthday)
+                        Glide.with(this@StoryActivity).load(senderData.profile_image).into(senderProfileIV)
+                        senderNameTV.text = senderData.name
+                        senderBirthdayTV.text = CalendarHelper.timeInMillsToDate(senderData.birthday)
 
                         // receiver 프로필 정보 입력
-                        Glide.with(activity).load(receiverData.profile_image).into(receiverProfileIVWeak.get()!!)
-                        receiverNameTVWeak.get()?.text = receiverData.name
-                        receiverBirthdayTVWeak.get()?.text = CalendarHelper.timeInMillsToDate(receiverData.birthday)
+                        Glide.with(this@StoryActivity).load(receiverData.profile_image).into(receiverProfileIV)
+                        receiverNameTV.text = receiverData.name
+                        receiverBirthdayTV.text = CalendarHelper.timeInMillsToDate(receiverData.birthday)
                     }
                 }
-            } else {
-                return
             }
+        }
+
+        // 초기 커플 프로필 데이터와 스토리 데이터 가져오기
+        fun getInitData() {
+            swipeRefreshSR.isRefreshing = true
+            loadingDialog.show(supportFragmentManager, "LoadingDialog")
+
+            storyList.clear()
+
+            httpConnectionService.serverGetRequest(makeRequestUrl(0, "getCoupleProfile"), REQUEST_COUPLE_PROFILE, GET_COUPLE_PROFILE_DATA)
+            httpConnectionService.serverGetRequest(makeRequestUrl(0, "getStoryData"), REQUEST_STORY_DATA, GET_STORY_DATA)
         }
     }
 }
