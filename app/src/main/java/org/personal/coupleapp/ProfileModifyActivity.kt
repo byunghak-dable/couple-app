@@ -17,10 +17,10 @@ import android.widget.DatePicker
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_modify_profile.*
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_PROFILE_UPDATE
 import org.personal.coupleapp.backgroundOperation.ImageDecodeHandler
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_BITMAP
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_PROFILE_UPDATE
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.dialog.*
 import org.personal.coupleapp.utils.singleton.CalendarHelper
