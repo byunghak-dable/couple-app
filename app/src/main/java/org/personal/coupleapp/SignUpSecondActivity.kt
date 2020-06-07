@@ -84,7 +84,10 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         postJsonObject.put("what", "getInvitationCode")
         postJsonObject.put("singleUserID", userColumnID)
 
-        HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_SIMPLE_POST_METHOD)
+        Handler().postDelayed({
+
+            HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), GET_INVITE_CODE, REQUEST_SIMPLE_POST_METHOD)
+        }, 500)
         Log.i(TAG, "초대코드 서버로부터 받아오는 요청 보냄")
         Log.i("thread-test", "onResume 끝")
     }
@@ -143,7 +146,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     // 초대 코드를 받아오고,
-    private class CustomHandler(activity: AppCompatActivity, myInviteCode: TextView, loadingDialog:LoadingDialog) : Handler() {
+    private class CustomHandler(activity: AppCompatActivity, myInviteCode: TextView, loadingDialog: LoadingDialog) : Handler() {
 
         companion object {
             const val GET_INVITE_CODE = 1
@@ -224,7 +227,7 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
         }
 
         // 상대방과 연결이 완료 되었을 때(회원 가입 2단계까지 완료) -> preference 에 커플 컬럼 id, 커플 연결 완료 Boolean 값(true) 저장
-        private fun onSignUpSuccess(activity: AppCompatActivity, msg:Message) {
+        private fun onSignUpSuccess(activity: AppCompatActivity, msg: Message) {
             val toHome = Intent(activity, MainHomeActivity::class.java)
             val coupleColumnKey = activity.getText(R.string.coupleColumnID).toString()
             val partnerConnection = activity.getText(R.string.partnerConnection).toString()
@@ -232,29 +235,9 @@ class SignUpSecondActivity : AppCompatActivity(), View.OnClickListener {
             // 커플 컬럼 아이디를 shared 에 저장
             SharedPreferenceHelper.setInt(activity, coupleColumnKey, parseInt(msg.obj.toString()))
             SharedPreferenceHelper.setBoolean(activity, partnerConnection, true)
-
             toHome.putExtra("firstTime", true)
             activity.startActivity(toHome)
         }
     }
 }
 
-// 소켓 사용 해보기
-//        Thread(Runnable {
-//
-//            try {
-//                Log.i(TAG, "thread 시작")
-//                val message = opponentCodeED.text.toString()
-//                Log.i(TAG, message)
-//                val socket = Socket("13.125.99.215", 20205)
-//                Log.i(TAG, "소켓 연결")
-//                val writer = PrintWriter(socket.getOutputStream())
-//                writer.write(message)
-//                writer.flush()
-//                writer.close()
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//                Log.i(TAG, "error")
-//            }
-//
-//        }).start()
