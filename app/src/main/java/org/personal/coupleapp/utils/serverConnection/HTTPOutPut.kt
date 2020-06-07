@@ -16,10 +16,11 @@ interface HTTPOutPut {
 
     // POST 메소드
     fun postMethodToServer(postJsonString: String): String
+    fun signIn(postJsonString: String) : ProfileData?
 
     // PUT 메소드
     fun putMethodToServer(postJsonString: String): String
-    fun putProfileToServer(profileData: ProfileData): String
+    fun putProfileToServer(profileData: ProfileData): ProfileData?
 
     // DELETE 메소드
     fun deleteMethodToServer(postJsonString: String): String
