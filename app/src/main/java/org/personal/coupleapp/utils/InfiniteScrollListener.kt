@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 abstract class InfiniteScrollListener : RecyclerView.OnScrollListener {
 
     // 새로운 데이터를 가져오기 전 스크롤 위치 아래에 있는 최소 항목 수
-    private var visibleThreshold = 4
+    private var visibleThreshold = 3
 
     // 현재 페이지
     private var currentPage = 0
