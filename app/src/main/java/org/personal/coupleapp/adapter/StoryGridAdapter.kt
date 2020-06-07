@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import org.personal.coupleapp.R
 import org.personal.coupleapp.data.StoryData
-import org.personal.coupleapp.interfaces.ItemClickListener
+import org.personal.coupleapp.interfaces.recyclerView.ItemClickListener
 
 class StoryGridAdapter(val context: Context, private val storyList: ArrayList<StoryData>, private val itemClickListener: ItemClickListener) :
     RecyclerView.Adapter<StoryGridAdapter.ViewHolder>() {

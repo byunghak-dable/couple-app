@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import org.personal.coupleapp.R
 import org.personal.coupleapp.data.PlanData
-import org.personal.coupleapp.interfaces.ItemClickListener
+import org.personal.coupleapp.interfaces.recyclerView.ItemClickListener
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 
 class PlanAdapter(private val planList: ArrayList<PlanData>, private val itemClickListener: ItemClickListener) :

@@ -10,7 +10,7 @@ import com.denzcoskun.imageslider.ImageSlider
 import com.denzcoskun.imageslider.models.SlideModel
 import org.personal.coupleapp.R
 import org.personal.coupleapp.data.StoryData
-import org.personal.coupleapp.interfaces.ItemClickListener
+import org.personal.coupleapp.interfaces.recyclerView.ItemClickListener
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 
 class StoryAdapter(private val storyList: ArrayList<StoryData>, private val itemClickListener: ItemClickListener) :
