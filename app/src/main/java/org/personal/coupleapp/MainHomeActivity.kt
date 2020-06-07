@@ -39,13 +39,9 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
 
     // httpConnectionService 바인드 객체
     private lateinit var httpConnectionService: HTTPConnectionService
-
     // 서버 통신관련 변수
     private val GET_HOME_STORY_DATA = 1
     private val DELETE_STORY_DATA = 2
-
-    // warning dialog 아이디 값
-    private val FIRST_VISIT_DIALOG_ID = 1
 
     // 스토리 리스트(리사이클러 뷰) 관련 변수
     private val storyList = ArrayList<StoryData>()
