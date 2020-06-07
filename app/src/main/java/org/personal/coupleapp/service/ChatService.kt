@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.Handler
 import android.os.IBinder
+import android.os.Message
 import android.util.Log
 import org.personal.coupleapp.backgroundOperation.SocketReceiverThread
 import org.personal.coupleapp.backgroundOperation.SocketSenderThread
@@ -57,12 +58,10 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
     override fun onDestroy() {
         super.onDestroy()
         // 클라이언트 소켓 제거 하도록 메시지 전송
-        HandlerMessageHelper.sendChatMessage(socketSenderThread, SEND_MESSAGE, "quit")
+        sendChatMessage(SEND_MESSAGE, "quit")
         // 스레드가 바로 종료 되지 않도록 0.5초 후에 스레드 종료
-        Handler().postDelayed({
-            socketReceiverThread.isStop = true
-            socketSenderThread.looper.quit()
-        }, 500)
+        socketReceiverThread.isStop = true
+        socketSenderThread.looper.quit()
     }
 
     inner class LocalBinder : Binder() {
@@ -82,13 +81,25 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
         chatRespondListener = listener
     }
 
-    //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
+    //------------------ 액티비티에서 사용할 메소드 모음 ------------------
 
-    fun sendMessage(message: String) {
-        HandlerMessageHelper.sendChatMessage(socketSenderThread, SEND_MESSAGE, message)
+    fun sendMessage(messageData: String) {
+        sendChatMessage(SEND_MESSAGE, messageData)
     }
 
     override fun onReceive(respond: String?) {
-        chatRespondListener!!.onReceiveChat(respond)
+        // 서버 통신이 끊겼을 때 null 값을 읽어드린다(예외 처리)
+        if (!respond.isNullOrEmpty()) {
+            chatRespondListener!!.onReceiveChat(respond)
+        }
+    }
+
+    // 서버에 메시지를 보내는 메소드(socketSenderThread 에게 메시지를 보낸다)
+    private fun sendChatMessage(whichMessage: Int, chatMessage: String) {
+        val message = Message.obtain(socketSenderThread.getHandler())
+        message.what = whichMessage
+        message.obj = chatMessage
+        message.sendToTarget()
+        Log.i(TAG, "메시지 발신 테스트 : ")
     }
 }
