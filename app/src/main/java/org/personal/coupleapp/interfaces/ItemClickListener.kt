@@ -1,4 +1,4 @@
-package org.personal.coupleapp.adapter
+package org.personal.coupleapp.interfaces
 
 import android.view.View
 
