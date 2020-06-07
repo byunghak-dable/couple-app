@@ -28,13 +28,13 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
     private val TAG = javaClass.name
     private val serverPage = "SignUp"
 
-    //    private lateinit var serverConnectionThread: ServerConnectionThread
     private lateinit var httpConnectionService: HTTPConnectionService
     private val loadingDialog by lazy { LoadingDialog() }
 
-
+    // http 서버 통신 후 작업에 필요한 변수들
     private val CHECK_EMAIL_VALIDATION = 1
     private val TO_SECOND_STEP = 2
+    // 이메일, 비밀번호 valid check 변수
     private var isEmailValid = false
     private var isPasswordValid = false
 
@@ -207,7 +207,6 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     this@SignUpFirstActivity.startActivity(toStepTwo)
                     this@SignUpFirstActivity.finish()
                 }
-
             }
         }
     }
