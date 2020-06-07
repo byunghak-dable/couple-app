@@ -1,10 +1,9 @@
 package org.personal.coupleapp
 
-import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
+import android.content.ServiceConnection
+import android.os.*
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -17,23 +16,18 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main_home.*
 import org.json.JSONObject
-import org.personal.coupleapp.MainHomeActivity.CustomHandler.Companion.DELETE_STORY_DATA
-import org.personal.coupleapp.MainHomeActivity.CustomHandler.Companion.GET_HOME_STORY_DATA
 import org.personal.coupleapp.adapter.ItemClickListener
 import org.personal.coupleapp.adapter.StoryAdapter
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.DELETE_METHOD
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_GET_METHOD
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_STORY_DATA
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.DELETE_FROM_SERVER
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_STORY_DATA
 import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.dialog.ChoiceDialog
-import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.dialog.WarningDialog
+import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.InfiniteScrollListener
-import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
-import java.lang.ref.WeakReference
 
 class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener, ItemClickListener,
     WarningDialog.DialogListener, SwipeRefreshLayout.OnRefreshListener, ChoiceDialog.DialogListener {
@@ -43,17 +37,14 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     // 홈 페이지라 domain 만 사용
     private val serverPage = ""
 
-    private val MODIFY_STORY_DATA = 10
-
     // warning dialog 아이디 값
     private val FIRST_VISIT_DIALOG_ID = 1
 
+    // httpConnectionService 바인드 객체
+    private lateinit var httpConnectionService: HTTPConnectionService
     // 서버 통신관련 변수
-    private lateinit var serverConnectionThread: ServerConnectionThread
-    private val loadingDialog = LoadingDialog()
-
-    // onResume 에서 초기 스토리 데이터 가져올지 여부 결정
-    private var isInitStoryData = false
+    private val GET_HOME_STORY_DATA = 1
+    private val DELETE_STORY_DATA = 2
 
     // 스토리 리스트(리사이클러 뷰) 관련 변수
     private val storyList = ArrayList<StoryData>()
@@ -72,7 +63,6 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         setContentView(R.layout.activity_main_home)
         setListener()
         buildRecyclerView()
-        startWorkerThread()
 
         // 처음 로그인했을 때 프로필 설정할 수 있도록 프로필 액티비티로 이동
         if (intent.getBooleanExtra("firstTime", false)) {
@@ -90,23 +80,12 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
 
     override fun onStart() {
         super.onStart()
-        bottomNavigation.selectedItemId = R.id.home
+        startBoundService()
     }
 
     override fun onResume() {
         super.onResume()
-
-        // 초기 스토리 데이터 불러왔는지 확인하고 불러오지 않았으면 스토리 데이터 요청
-        if (!isInitStoryData) {
-            swipeRefreshSR.isRefreshing = true
-            HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(0), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
-            isInitStoryData = true
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        stopWorkerThread()
+        bottomNavigation.selectedItemId = R.id.home
     }
 
     private fun setListener() {
@@ -125,26 +104,17 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         storyRV.layoutManager = layoutManager
         scrollListener = object : InfiniteScrollListener(layoutManager) {
             override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView?) {
-                HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(page), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
+                httpConnectionService.serverGetRequest(makeRequestUrl(page), REQUEST_STORY_DATA, GET_HOME_STORY_DATA)
             }
         }
         storyRV.addOnScrollListener(scrollListener)
         storyRV.adapter = storyAdapter
     }
 
-
-    // 백그라운드 스레드 실행
-    private fun startWorkerThread() {
-        val serverMainHandler = CustomHandler(this, storyList, storyAdapter, swipeRefreshSR)
-
-        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
-        serverConnectionThread.start()
-    }
-
-    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
-    private fun stopWorkerThread() {
-        Log.i(TAG, "thread 종료")
-        serverConnectionThread.looper.quit()
+    // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
+    private fun startBoundService() {
+        val startService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startService, connection, BIND_AUTO_CREATE)
     }
 
     // 무한 스크롤링 아이템 범위를 정해서 서버에 보낼 request url build 하는 메소드
@@ -235,8 +205,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         swipeRefreshSR.isRefreshing = true
         scrollListener.resetState()
         storyList.clear()
-        storyAdapter.notifyDataSetChanged()
-        HandlerMessageHelper.serverGetRequest(serverConnectionThread, makeRequestUrl(0), GET_HOME_STORY_DATA, REQUEST_STORY_DATA)
+        httpConnectionService.serverGetRequest(makeRequestUrl(0), REQUEST_STORY_DATA, GET_HOME_STORY_DATA)
     }
 
     //TODO: 리사이클러 뷰 클릭 이벤트 구현
@@ -274,7 +243,7 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
     private fun modifyStory(itemPosition: Int?, storyID: Int?) {
         val toModifyStory = Intent(this, StoryAddActivity::class.java)
         toModifyStory.putExtra("storyData", storyList[itemPosition!!])
-        startActivityForResult(toModifyStory, MODIFY_STORY_DATA)
+        startActivity(toModifyStory)
     }
 
     private fun deleteStory(itemPosition: Int?, storyID: Int?) {
@@ -284,54 +253,55 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         jsonObject.put("itemPosition", itemPosition)
         jsonObject.put("storyID", storyID)
 
-        HandlerMessageHelper.serverDeleteRequest(serverConnectionThread, serverPage, jsonObject.toString(), DELETE_STORY_DATA, DELETE_METHOD)
+        httpConnectionService.serverDeleteRequest(serverPage, jsonObject.toString(), DELETE_FROM_SERVER, DELETE_STORY_DATA)
     }
 
-    private class CustomHandler(
-        activity: Activity,
-        val storyList: ArrayList<StoryData>,
-        val storyAdapter: StoryAdapter,
-        swipeRefreshSR: SwipeRefreshLayout
-    ) : Handler() {
+    // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
+    /*
+    바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
+    서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
+     */
+    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
+            httpConnectionService = binder.getService()!!
+            httpConnectionService.setOnHttpRespondListener(this)
 
-        companion object {
-            const val GET_HOME_STORY_DATA = 1
-            const val DELETE_STORY_DATA = 2
+            // 초기 스토리 데이터 불러왔는지 확인하고 불러오지 않았으면 스토리 데이터 요청
+
+            swipeRefreshSR.isRefreshing = true
+            storyList.clear()
+            httpConnectionService.serverGetRequest(makeRequestUrl(0), REQUEST_STORY_DATA, GET_HOME_STORY_DATA)
         }
 
-        private val TAG = javaClass.name
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i(TAG, "바운드 서비스 연결 종료")
+        }
 
-        private val activityWeakReference: WeakReference<Activity> = WeakReference(activity)
-        private val swipeRefreshSRWeak: WeakReference<SwipeRefreshLayout> = WeakReference(swipeRefreshSR)
+        override fun onHttpRespond(responseData: HashMap<*, *>) {
+            // 메인 UI 작업을 담당하는 핸들러 -> 액티비티가 아닌 ServiceConnection 의 추상 클래스 내부에서 UI 를 다루기 위해 생성
+            val handler = Handler(Looper.getMainLooper())
 
-
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            val activity = activityWeakReference.get()
-
-            if (activity != null) {
-                when (msg.what) {
-                    GET_HOME_STORY_DATA -> {
-                        swipeRefreshSRWeak.get()?.isRefreshing = false
-                        if (msg.obj == null) {
-                            Log.i(TAG, "데이터 없음")
-                        } else {
-                            val fetchedStoryList = msg.obj as ArrayList<StoryData>
-                            fetchedStoryList.forEach { storyList.add(it) }
-
-                            Log.i(TAG, storyList[0].id.toString())
-                            storyAdapter.notifyDataSetChanged()
-                        }
-                    }
-
-                    DELETE_STORY_DATA -> {
-                        storyList.removeAt(parseInt(msg.obj.toString()))
-                        storyAdapter.notifyDataSetChanged()
+            when (responseData["whichRespond"] as Int) {
+                // 스토리를 불러오는 경우
+                GET_HOME_STORY_DATA -> {
+                    swipeRefreshSR.isRefreshing = false
+                    if (responseData["respondData"] == null) {
+                        Log.i(TAG, "스토리 불러오기 : 데이터 없음")
+                    } else {
+                        val fetchedStoryList = responseData["respondData"] as ArrayList<StoryData>
+                        fetchedStoryList.forEach { storyList.add(it) }
+                        handler.post { storyAdapter.notifyDataSetChanged() }
+                        Log.i(TAG, "스토리 불러오기 : 불러오기 완료")
                     }
                 }
-            } else {
-                return
+                // 스토리를 삭제할 경우
+                DELETE_STORY_DATA -> {
+                    val storyIndex = parseInt(responseData["respondData"].toString())
+                    storyList.removeAt(storyIndex)
+                    handler.post { storyAdapter.notifyDataSetChanged() }
+                    Log.i(TAG, "스토리 삭제하기 : 삭제하기 완료")
+                }
             }
         }
     }
