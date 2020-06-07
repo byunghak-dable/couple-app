@@ -3,16 +3,14 @@ package org.personal.coupleapp.service
 import android.app.Service
 import android.content.Intent
 import android.os.Binder
-import android.os.Handler
 import android.os.IBinder
 import android.os.Message
 import android.util.Log
 import org.personal.coupleapp.backgroundOperation.SocketReceiverThread
 import org.personal.coupleapp.backgroundOperation.SocketSenderThread
 import org.personal.coupleapp.backgroundOperation.SocketSenderThread.Companion.SEND_MESSAGE
+import org.personal.coupleapp.interfaces.service.ChatListener
 import org.personal.coupleapp.utils.serverConnection.TCPClient
-import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
-import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 
 class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
 
@@ -22,7 +20,7 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
     private lateinit var socketSenderThread: SocketSenderThread
     private lateinit var socketReceiverThread: SocketReceiverThread
 
-    private var chatRespondListener: ChatRespondListener? = null
+    private var chatRespondListener: ChatListener? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -71,13 +69,8 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
         }
     }
 
-    // 액티비티에서 채팅 메시지를 받기 위한 인터페이스
-    interface ChatRespondListener {
-        fun onReceiveChat(respond: String?)
-    }
-
     //
-    fun setOnChatRespondListener(listener: ChatRespondListener) {
+    fun setOnChatRespondListener(listener: ChatListener) {
         chatRespondListener = listener
     }
 
