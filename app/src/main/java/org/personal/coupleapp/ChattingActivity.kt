@@ -17,7 +17,6 @@ import org.personal.coupleapp.data.CoupleChatData
 import org.personal.coupleapp.service.ChatService
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import java.lang.Exception
 import java.lang.Integer.parseInt
 
 class ChattingActivity : AppCompatActivity(), View.OnClickListener {
@@ -110,32 +109,28 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener {
         // 메시지를 읽고 메시지의 정보를 split 으로 나눠 각각의 정보로 messageData 객체를 생성하고 추가
         override fun onReceiveChat(respond: String?) {
             val handler = Handler(Looper.getMainLooper())
-            try {
-                val delimiter = "@"
-                val splitData = respond!!.split(delimiter)
+            val delimiter = "@"
+            val splitData = respond!!.split(delimiter)
 
-                val coupleColumnID = parseInt(splitData[0])
-                val userColumnID = parseInt(splitData[1])
-                val senderName = splitData[2].replace("'", "")
-                val profileImageUrl = splitData[3].replace("'", "")
-                val message = splitData[4]
-                val messageTime = CalendarHelper.getCurrentTime()
-                // 채팅 데이터 객체 생성
-                val coupleChatData = CoupleChatData(coupleColumnID, userColumnID, senderName, profileImageUrl, message, messageTime)
+            val coupleColumnID = parseInt(splitData[0])
+            val userColumnID = parseInt(splitData[1])
+            val senderName = splitData[2].replace("'", "")
+            val profileImageUrl = splitData[3].replace("'", "")
+            val message = splitData[4]
+            val messageTime = CalendarHelper.getCurrentTime()
 
-                coupleChatList.add(coupleChatData)
+            // 채팅 데이터 객체 생성
+            val coupleChatData = CoupleChatData(coupleColumnID, userColumnID, senderName, profileImageUrl, message, messageTime)
 
-                handler.post {
-                    chatAdapter.notifyItemInserted(coupleChatList.indexOf(coupleChatData))
-                    chattingBoxRV.scrollToPosition(chatAdapter.itemCount - 1)
-                    Log.i(TAG, coupleChatList.toString())
-                }
-            } catch (e: Exception) {
-                // TODO : 소켓 서버 바로 끊을 수 있지만, 에뮬에서는 바로 끊기지 않기 때문에 시간차를 두어서 발생한 에러 -> 수정 가능하면 수정하자
-                e.printStackTrace()
-                Log.i(TAG, "SocketReceiver Thread 에서 소켓 연결이 늦게 끊겨 값을 읽어드려 발생")
+            coupleChatList.add(coupleChatData)
+
+            handler.post {
+                chatAdapter.notifyItemInserted(coupleChatList.indexOf(coupleChatData))
+                chattingBoxRV.scrollToPosition(chatAdapter.itemCount - 1)
+                Log.i(TAG, coupleChatList.toString())
             }
         }
+
         // 서버 클라이언트 소켓의 변수를 지정하기 위해 접속하자마자 데이터 전송
         private fun sendInitDataToServer() {
             val delimiter = "@"
