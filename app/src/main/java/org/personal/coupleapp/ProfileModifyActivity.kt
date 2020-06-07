@@ -2,14 +2,14 @@ package org.personal.coupleapp
 
 import android.Manifest
 import android.app.Activity
+import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
+import android.os.*
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
@@ -17,20 +17,20 @@ import android.widget.DatePicker
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_modify_profile.*
-import org.personal.coupleapp.ProfileModifyActivity.CustomHandler.Companion.UPLOAD_PROFILE
 import org.personal.coupleapp.backgroundOperation.ImageDecodeHandler
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_BITMAP
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
 import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_PROFILE_UPDATE
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.dialog.*
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.dialog.LoadingDialog
+import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import java.lang.ref.WeakReference
+import java.util.HashMap
 
 class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener,
     InformDialog.DialogListener, ChoiceDialog.DialogListener {
@@ -39,6 +39,11 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
 
     private val serverPage = "ModifyProfile"
 
+    private lateinit var httpConnectionService: HTTPConnectionService
+    private val UPLOAD_PROFILE = 1
+    //TODO : 이미지 관련 스레드도 바인드 서비스로 만들어서 하자
+    private lateinit var imageDecodeThread: ImageDecodeThread
+
     // PERMISSION_CODE는 100 단위로 설정
     private val PERMISSION_CODE_CAMERA = 100
     private val PERMISSION_CODE_GALLERY = 101
@@ -46,9 +51,6 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
     // 암시적 인텐트는 1000단위로 설정
     private val CAMERA_REQUEST_CODE = 1000
     private val GALLERY_REQUEST_CODE = 1001
-
-    private lateinit var serverConnectionThread: ServerConnectionThread
-    private lateinit var imageDecodeThread: ImageDecodeThread
 
     // 로딩 다이얼로그
     private val loadingDialog = LoadingDialog()
@@ -80,6 +82,16 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        startBoundService()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         Log.i("thread-test", "onDestroy")
@@ -105,21 +117,23 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         confirmBtn.setOnClickListener(this)
     }
 
+    // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
+    private fun startBoundService() {
+        val startService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startService, connection, BIND_AUTO_CREATE)
+    }
+
     // 백그라운드 스레드 실행
     private fun startWorkerThread() {
-        val serverMainHandler = CustomHandler(this, loadingDialog)
         val decodeMainHandler = ImageDecodeHandler(profileImageIV, imageList)
 
-        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
         imageDecodeThread = ImageDecodeThread("ImageDecodeThread", this, decodeMainHandler)
-        serverConnectionThread.start()
         imageDecodeThread.start()
     }
 
     // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
     private fun stopWorkerThread() {
         Log.i(TAG, "thread 종료")
-        serverConnectionThread.looper.quit()
         imageDecodeThread.looper.quit()
     }
 
@@ -171,9 +185,9 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         val birthDay = birthdayInMills!!
         val sex = sexBtn.text.toString()
         // 프로필 데이터 객체를 스레드로 보낸다
-        val profileData = ProfileData(userColumnID, imageList[0], name, stateMessage, birthDay, sex)
+        val profileData = ProfileData(userColumnID, null, imageList[0], name, stateMessage, birthDay, sex)
 
-        HandlerMessageHelper.serverPutRequest(serverConnectionThread, serverPage, profileData, UPLOAD_PROFILE, REQUEST_PROFILE_UPDATE)
+        httpConnectionService.serverPutRequest(serverPage, profileData, REQUEST_PROFILE_UPDATE, UPLOAD_PROFILE)
         loadingDialog.show(supportFragmentManager, "Loading")
         Log.i(TAG, "프로필 변경 서버에 업로드 메시지 보냄")
     }
@@ -296,37 +310,38 @@ class ProfileModifyActivity : AppCompatActivity(), View.OnClickListener, DatePic
         }
     }
 
-    // 프로필 사진 업로드,
-    private class CustomHandler(activity: AppCompatActivity, loadingDialog: LoadingDialog) : Handler() {
-
-        companion object {
-            const val UPLOAD_PROFILE = 1
+    // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
+    /*
+    바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
+    서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
+     */
+    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
+            httpConnectionService = binder.getService()!!
+            httpConnectionService.setOnHttpRespondListener(this)
         }
 
-        private val TAG = javaClass.name
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i(TAG, "바운드 서비스 연결 종료")
+        }
 
-        private val activityWeak: WeakReference<AppCompatActivity> = WeakReference(activity)
-        private val loadingWeak: WeakReference<LoadingDialog> = WeakReference(loadingDialog)
+        override fun onHttpRespond(responseData: HashMap<*, *>) {
+            val handler = Handler(Looper.getMainLooper())
 
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            val activity = activityWeak.get()
-            val loadingDialog = loadingWeak.get()
-
-            // 액티비티가 destroy 되지 않았을 때
-            if (activity != null) {
-                when (msg.what) {
-                    UPLOAD_PROFILE -> {
-                        loadingDialog?.dismiss()
-                        Log.i(TAG, "테스트 ${msg.obj}")
-                        activity.finish()
-                    }
+            when (responseData["whichRespond"] as Int) {
+                // 스토리를 불러오는 경우
+                UPLOAD_PROFILE -> {
+                    loadingDialog.dismiss()
+                    val profileData: ProfileData = responseData["respondData"] as ProfileData
+                    SharedPreferenceHelper.setString(this@ProfileModifyActivity, this@ProfileModifyActivity.getString(R.string.userName), profileData.name)
+                    SharedPreferenceHelper.setString(
+                        this@ProfileModifyActivity,
+                        this@ProfileModifyActivity.getString(R.string.profileImageUrl),
+                        profileData.profile_image.toString()
+                    )
+                    this@ProfileModifyActivity.finish()
                 }
-                // 액티비티가 destroy 되면 바로 빠져나오도록
-            } else {
-                Log.i(TAG, "액티비티 제거로 인해 handler 종료")
-                return
             }
         }
     }
