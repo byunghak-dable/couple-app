@@ -1,9 +1,9 @@
 package org.personal.coupleapp
 
+import android.content.ComponentName
 import android.content.Intent
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
+import android.content.ServiceConnection
+import android.os.*
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -12,41 +12,46 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_sign_up_first.*
+import kotlinx.android.synthetic.main.activity_sign_up_first.emailED
+import kotlinx.android.synthetic.main.activity_sign_up_first.passwordED
 import org.json.JSONObject
-import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.CHECK_EMAIL_VALIDATION
-import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.TO_SECOND_STEP
-import org.personal.coupleapp.SignUpFirstActivity.CustomHandler.Companion.isEmailValid
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_SIMPLE_POST_METHOD
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_SIMPLE_POST_METHOD
 import org.personal.coupleapp.dialog.LoadingDialog
+import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
-import java.lang.ref.WeakReference
 
 class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatcher {
 
     private val TAG = javaClass.name
     private val serverPage = "SignUp"
-    private lateinit var serverConnectionThread: ServerConnectionThread
+
+    //    private lateinit var serverConnectionThread: ServerConnectionThread
+    private lateinit var httpConnectionService: HTTPConnectionService
     private val loadingDialog by lazy { LoadingDialog() }
 
-    // utils/singleton 싱글톤 객체
-    // Memo : object 는 한번만 선언 가능
+
+    private val CHECK_EMAIL_VALIDATION = 1
+    private val TO_SECOND_STEP = 2
+    private var isEmailValid = false
     private var isPasswordValid = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up_first)
         setListener()
-        // 스레드 시작
-        startWorkerThread()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // 스레드 종료
-        stopWorkerThread()
+    override fun onStart() {
+        super.onStart()
+        startBoundService()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
     }
 
     private fun setListener() {
@@ -55,16 +60,10 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
         passwordED.addTextChangedListener(this)
     }
 
-    // 백그라운드 스레드 실행
-    private fun startWorkerThread() {
-        val mainHandler = CustomHandler(this, emailValidationTV, loadingDialog)
-        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", mainHandler)
-        serverConnectionThread.start()
-    }
-
-    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
-    private fun stopWorkerThread() {
-        serverConnectionThread.looper.quit()
+    // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
+    private fun startBoundService() {
+        val startService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startService, connection, BIND_AUTO_CREATE)
     }
 
     override fun onClick(v: View?) {
@@ -93,7 +92,8 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                     postJsonObject.put("what", "emailValidation")
                     postJsonObject.put("email", s.toString())
 
-                    HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJsonObject.toString(), CHECK_EMAIL_VALIDATION, REQUEST_SIMPLE_POST_METHOD)
+                    httpConnectionService.serverPostRequest(serverPage, postJsonObject.toString(), REQUEST_SIMPLE_POST_METHOD, CHECK_EMAIL_VALIDATION)
+
                 } else {
                     changeValidationStyle(emailValidationTV, R.string.emailInValid, R.color.red)
                 }
@@ -135,7 +135,7 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
                 postJSONObject.put("email", email)
                 postJSONObject.put("password", password)
 
-                HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, postJSONObject.toString(), TO_SECOND_STEP, REQUEST_SIMPLE_POST_METHOD)
+                httpConnectionService.serverPostRequest(serverPage, postJSONObject.toString(), REQUEST_SIMPLE_POST_METHOD, TO_SECOND_STEP)
                 // 로딩 다이얼로그 보여주기
                 loadingDialog.show(supportFragmentManager, "Loading")
             } else {
@@ -151,63 +151,63 @@ class SignUpFirstActivity : AppCompatActivity(), View.OnClickListener, TextWatch
 
     }
 
-    //------------------ ServerThread 와의 통신 결과를 안드로이드 Main UI 에 적용하는 Handler 클래스 ------------------
-    private class CustomHandler(activity: AppCompatActivity, emailValidationTV: TextView, loadingDialog: LoadingDialog) : Handler() {
-
-        companion object {
-            const val CHECK_EMAIL_VALIDATION = 1
-            const val TO_SECOND_STEP = 2
-            var isEmailValid = false
+    // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
+    /*
+    바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
+    서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
+     */
+    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
+            httpConnectionService = binder.getService()!!
+            httpConnectionService.setOnHttpRespondListener(this)
         }
 
-        private val TAG = javaClass.name
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i(TAG, "바운드 서비스 연결 종료")
+        }
 
-        private val activityWeakReference: WeakReference<AppCompatActivity> = WeakReference(activity)
-        private val textViewWeakReference: WeakReference<TextView> = WeakReference(emailValidationTV)
-        private val loadingDialogWeak :WeakReference<LoadingDialog> = WeakReference(loadingDialog)
+        override fun onHttpRespond(responseData: HashMap<*, *>) {
+            // 메인 UI 작업을 담당하는 핸들러 -> 액티비티가 아닌 ServiceConnection 의 추상 클래스 내부에서 UI 를 다루기 위해 생성
+            val handler = Handler(Looper.getMainLooper())
 
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
+            when (responseData["whichRespond"] as Int) {
 
-            val emailValidationTV = textViewWeakReference.get()
-            val activity = activityWeakReference.get()
+                CHECK_EMAIL_VALIDATION -> {
+                    Log.i(TAG, "onResponseData : ${responseData["respondData"]}")
 
-            // 액티비티가 destroy 되지 않았을 때
-            if (activity != null) {
-                when (msg.what) {
-                    CHECK_EMAIL_VALIDATION -> {
-                        val isDuplicated = msg.obj.toString()
+                    when (responseData["respondData"] as String) {
 
-                        if (isDuplicated == "false") {
-                            emailValidationTV?.text = activity.getText(R.string.valid)
-                            emailValidationTV?.setTextColor(activity.getColor(R.color.green))
+                        "false" -> {
+                            handler.post {
+                                emailValidationTV?.text = this@SignUpFirstActivity.getText(R.string.valid)
+                                emailValidationTV?.setTextColor(this@SignUpFirstActivity.getColor(R.color.green))
+                            }
                             isEmailValid = true
-                        } else {
-                            emailValidationTV?.text = activity.getText(R.string.emailDuplicated)
-                            emailValidationTV?.setTextColor(activity.getColor(R.color.red))
+                        }
+                        else -> {
+                            handler.post {
+                                emailValidationTV?.text = this@SignUpFirstActivity.getText(R.string.emailDuplicated)
+                                emailValidationTV?.setTextColor(this@SignUpFirstActivity.getColor(R.color.red))
+                            }
                             isEmailValid = false
                         }
                     }
-
-                    TO_SECOND_STEP -> {
-                        // 로딩 다이얼로그 삭제
-                        loadingDialogWeak.get()?.dismiss()
-                        val userTableID = parseInt(msg.obj.toString())
-                        val toStepTwo = Intent(activity, SignUpSecondActivity::class.java)
-                        val columnKey = activity.getText(R.string.userColumnID).toString()
-                        val partnerConnection = activity.getText(R.string.partnerConnection).toString()
-
-                        // sharedPreference 에 single_user(DB table)의 id 값, 파트너 연결 여부 저장
-                        SharedPreferenceHelper.setInt(activity, columnKey, userTableID)
-                        SharedPreferenceHelper.setBoolean(activity, partnerConnection, false)
-                        activity.startActivity(toStepTwo)
-                        activity.finish()
-                    }
                 }
-                // 액티비티가 destroy 되면 바로 빠져나오도록
-            } else {
-                Log.i(TAG, "액티비티 제거로 인해 handler 종료")
-                return
+                TO_SECOND_STEP -> {
+                    loadingDialog.dismiss()
+                    val userTableID = parseInt(responseData["respondData"] as String)
+                    val toStepTwo = Intent(this@SignUpFirstActivity, SignUpSecondActivity::class.java)
+                    val columnKey = this@SignUpFirstActivity.getText(R.string.userColumnID).toString()
+                    val partnerConnection = this@SignUpFirstActivity.getText(R.string.partnerConnection).toString()
+
+                    // sharedPreference 에 single_user(DB table)의 id 값, 파트너 연결 여부 저장
+                    SharedPreferenceHelper.setInt(this@SignUpFirstActivity, columnKey, userTableID)
+                    SharedPreferenceHelper.setBoolean(this@SignUpFirstActivity, partnerConnection, false)
+                    this@SignUpFirstActivity.startActivity(toStepTwo)
+                    this@SignUpFirstActivity.finish()
+                }
+
             }
         }
     }
