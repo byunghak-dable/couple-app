@@ -14,12 +14,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_chatting.*
 import org.personal.coupleapp.adapter.ChatAdapter
 import org.personal.coupleapp.data.CoupleChatData
+import org.personal.coupleapp.interfaces.service.ChatListener
 import org.personal.coupleapp.service.ChatService
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
 
-class ChattingActivity : AppCompatActivity(), View.OnClickListener {
+class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener {
 
     private val TAG = javaClass.name
 
@@ -90,45 +91,45 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener {
         Log.i(TAG, values.toString())
     }
 
+    // http 바인드 서비스 인터페이스 메소드 : 서비스에 있는 리스너를 통해 메시지를 읽어 온다.
+    // 커플 ID - 나의 ID - 이름 - 이미지 url - message
+    // 메시지를 읽고 메시지의 정보를 split 으로 나눠 각각의 정보로 messageData 객체를 생성하고 추가
+    override fun onReceiveChat(respond: String?) {
+        val handler = Handler(Looper.getMainLooper())
+        val delimiter = "@"
+        val splitData = respond!!.split(delimiter)
+
+        val coupleColumnID = parseInt(splitData[0])
+        val userColumnID = parseInt(splitData[1])
+        val senderName = splitData[2].replace("'", "")
+        val profileImageUrl = splitData[3].replace("'", "")
+        val message = splitData[4]
+        val messageTime = CalendarHelper.getCurrentTime()
+
+        // 채팅 데이터 객체 생성
+        val coupleChatData = CoupleChatData(coupleColumnID, userColumnID, senderName, profileImageUrl, message, messageTime)
+
+        coupleChatList.add(coupleChatData)
+
+        handler.post {
+            chatAdapter.notifyItemInserted(coupleChatList.indexOf(coupleChatData))
+            chattingBoxRV.scrollToPosition(chatAdapter.itemCount - 1)
+        }
+        Log.i(TAG, coupleChatList.toString())
+    }
+
     // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
-    private val connection: ServiceConnection = object : ServiceConnection, ChatService.ChatRespondListener {
+    private val connection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: ChatService.LocalBinder = service as ChatService.LocalBinder
             chatService = binder.getService()!!
-            chatService.setOnChatRespondListener(this)
+            chatService.setOnChatRespondListener(this@ChattingActivity)
             sendInitDataToServer()
             Log.i(TAG, "Bound Service Connection : Connected")
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
             Log.i(TAG, "Bound Service Connection : 바운드 서비스 종료")
-        }
-
-        // 서비스에 있는 리스너를 통해 메시지를 읽어 온다.
-        // 커플 ID - 나의 ID - 이름 - 이미지 url - message
-        // 메시지를 읽고 메시지의 정보를 split 으로 나눠 각각의 정보로 messageData 객체를 생성하고 추가
-        override fun onReceiveChat(respond: String?) {
-            val handler = Handler(Looper.getMainLooper())
-            val delimiter = "@"
-            val splitData = respond!!.split(delimiter)
-
-            val coupleColumnID = parseInt(splitData[0])
-            val userColumnID = parseInt(splitData[1])
-            val senderName = splitData[2].replace("'", "")
-            val profileImageUrl = splitData[3].replace("'", "")
-            val message = splitData[4]
-            val messageTime = CalendarHelper.getCurrentTime()
-
-            // 채팅 데이터 객체 생성
-            val coupleChatData = CoupleChatData(coupleColumnID, userColumnID, senderName, profileImageUrl, message, messageTime)
-
-            coupleChatList.add(coupleChatData)
-
-            handler.post {
-                chatAdapter.notifyItemInserted(coupleChatList.indexOf(coupleChatData))
-                chattingBoxRV.scrollToPosition(chatAdapter.itemCount - 1)
-                Log.i(TAG, coupleChatList.toString())
-            }
         }
 
         // 서버 클라이언트 소켓의 변수를 지정하기 위해 접속하자마자 데이터 전송

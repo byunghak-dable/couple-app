@@ -13,15 +13,9 @@ import android.widget.DatePicker
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import kotlinx.android.synthetic.main.activity_story.*
 import kotlinx.android.synthetic.main.activity_story_add.*
-import org.personal.coupleapp.StoryAddActivity.CustomHandler.Companion.UPLOAD_STORY_DATA
-import org.personal.coupleapp.StoryAddActivity.MultipleImageHandler.Companion.MULTIPLE_IMAGE
-import org.personal.coupleapp.StoryAddActivity.MultipleImageHandler.Companion.SINGLE_IMAGE
 import org.personal.coupleapp.adapter.ImageListAdapter
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_INSERT_STORY_DATA
-import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_BITMAP
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_INTO_MULTIPLE_BITMAP
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread.Companion.DECODE_URL_TO_BITMAP
@@ -29,14 +23,16 @@ import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.dialog.ChoiceDialog
 import org.personal.coupleapp.dialog.DatePickerDialog
 import org.personal.coupleapp.dialog.LoadingDialog
-import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
+import org.personal.coupleapp.interfaces.service.ImageHandlingListener
 import org.personal.coupleapp.service.HTTPConnectionService
+import org.personal.coupleapp.service.ImageHandlingService
 import org.personal.coupleapp.utils.singleton.CalendarHelper
-import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import java.lang.ref.WeakReference
 
-class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog.DialogListener, DatePickerDialog.DatePickerListener {
+class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog.DialogListener, DatePickerDialog.DatePickerListener,
+    ImageHandlingListener,
+    HTTPConnectionListener {
 
     private val TAG = javaClass.name
 
@@ -47,22 +43,26 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
     private val GALLERY_REQUEST_CODE = 1001
 
     private lateinit var httpConnectionService: HTTPConnectionService
-    private lateinit var imageDecodeThread: ImageDecodeThread
+    private lateinit var imageHandlingService: ImageHandlingService
+    private val UPLOAD_STORY_DATA = 1
+
     private val loadingDialog = LoadingDialog()
 
-    private var imageList = ArrayList<Bitmap>()
+    private var imageList = ArrayList<Bitmap?>()
     private val imageListAdapter = ImageListAdapter(imageList)
     private var storyData: StoryData? = null
 
     // 스토리 날짜(밀리세컨으로 받아서 변환한다)
     private var dateTimeInMills: Long = 0
 
+    private val handler by lazy { Handler(Looper.getMainLooper()) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_story_add)
         setListener()
         buildRecyclerView()
-        startWorkerThread()
+        startImageService()
     }
 
     override fun onResume() {
@@ -70,23 +70,23 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         if (intent.hasExtra("storyData")) {
             val storyData1: StoryData? = intent.getParcelableExtra("storyData")
             storyData = storyData1
-            HandlerMessageHelper.decodeImage(imageDecodeThread, storyData1?.photo_path, DECODE_URL_TO_BITMAP, MULTIPLE_IMAGE)
+            imageHandlingService.decodeImage(storyData1?.photo_path, DECODE_URL_TO_BITMAP)
         }
     }
 
     override fun onStart() {
         super.onStart()
-        startBoundService()
+        startHttpService()
     }
 
     override fun onStop() {
         super.onStop()
-        unbindService(connection)
+        unbindService(httpConnection)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopWorkerThread()
+        unbindService(imageHandlingConnection)
     }
 
     // onCreate 보기 편하도록 클릭 리스너 모아두는 메소드
@@ -106,22 +106,15 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
     }
 
     // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
-    private fun startBoundService() {
-        val startService = Intent(this, HTTPConnectionService::class.java)
-        bindService(startService, connection, BIND_AUTO_CREATE)
+    private fun startHttpService() {
+        val startHttpService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startHttpService, httpConnection, BIND_AUTO_CREATE)
     }
 
-    // 백그라운드 스레드 실행
-    private fun startWorkerThread() {
-        val decodeMainHandler = MultipleImageHandler(imageList, imageListAdapter, loadingDialog)
-        imageDecodeThread = ImageDecodeThread("ImageDecodeThread", this, decodeMainHandler)
-        imageDecodeThread.start()
-    }
-
-    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
-    private fun stopWorkerThread() {
-        Log.i(TAG, "thread 종료")
-        imageDecodeThread.looper.quit()
+    // 현재 액티비티와 ImageHandlingService(Bound Service)를 연결하는 메소드
+    private fun startImageService() {
+        val startImageService = Intent(this, ImageHandlingService::class.java)
+        bindService(startImageService, imageHandlingConnection, BIND_AUTO_CREATE)
     }
 
     //------------------ 클릭 시 이벤트 관리하는 메소드 모음 ------------------
@@ -200,6 +193,32 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         startActivityForResult(galleryIntent, GALLERY_REQUEST_CODE)
     }
 
+    //------------------ 바인드 서비스 인터페이스 메소드 모음 ------------------
+    // http 서비스 인터페이스 메소드
+    override fun onHttpRespond(responseData: HashMap<*, *>) {
+        when (responseData["whichRespond"] as Int) {
+            // 로그인을 할 경우
+            UPLOAD_STORY_DATA -> {
+                loadingDialog.dismiss()
+                Log.i("되나?", responseData["respondData"].toString())
+                finish()
+            }
+        }
+    }
+
+    // 이미지 디코딩 서비스 인터페이스 메소드
+    override fun onSingleImage(bitmap: Bitmap) {
+        loadingDialog.dismiss()
+        imageList.add(bitmap)
+        handler.post { imageListAdapter.notifyDataSetChanged() }
+    }
+
+    override fun onMultipleImage(bitmapList: ArrayList<Bitmap?>) {
+        loadingDialog.dismiss()
+        bitmapList.forEach { imageList.add(it) }
+        handler.post { imageListAdapter.notifyDataSetChanged() }
+    }
+
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -212,11 +231,11 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
 
                     GALLERY_REQUEST_CODE -> {
                         val clipData = data.clipData
+                        loadingDialog.show(supportFragmentManager, "Loading")
                         if (clipData != null) {
-                            loadingDialog.show(supportFragmentManager, "Loading")
-                            HandlerMessageHelper.decodeImage(imageDecodeThread, data.clipData, DECODE_INTO_MULTIPLE_BITMAP, MULTIPLE_IMAGE)
+                            imageHandlingService.decodeImage(data.clipData, DECODE_INTO_MULTIPLE_BITMAP)
                         } else {
-                            HandlerMessageHelper.decodeImage(imageDecodeThread, data.data, DECODE_INTO_BITMAP, SINGLE_IMAGE)
+                            imageHandlingService.decodeImage(data.data, DECODE_INTO_BITMAP)
                         }
                     }
                 }
@@ -230,106 +249,28 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
     바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
     서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
      */
-    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+    private val httpConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
             httpConnectionService = binder.getService()!!
-            httpConnectionService.setOnHttpRespondListener(this)
+            httpConnectionService.setOnHttpRespondListener(this@StoryAddActivity)
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
-            Log.i(TAG, "바운드 서비스 연결 종료")
-        }
-
-        override fun onHttpRespond(responseData: HashMap<*, *>) {
-            // 메인 UI 작업을 담당하는 핸들러 -> 액티비티가 아닌 ServiceConnection 의 추상 클래스 내부에서 UI 를 다루기 위해 생성
-            val handler = Handler(Looper.getMainLooper())
-
-            when (responseData["whichRespond"] as Int) {
-                // 로그인을 할 경우
-                UPLOAD_STORY_DATA -> {
-                    loadingDialog.dismiss()
-                    Log.i("되나?", responseData["respondData"].toString())
-                    this@StoryAddActivity.finish()
-                }
-            }
+            Log.i(TAG, "http 바운드 서비스 연결 종료")
         }
     }
 
-    // 프로필 사진 업로드,
-    private class CustomHandler(activity: AppCompatActivity, loadingDialog: LoadingDialog) : Handler() {
+    private val imageHandlingConnection: ServiceConnection = object : ServiceConnection {
 
-        companion object {
-            const val UPLOAD_STORY_DATA = 1
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder: ImageHandlingService.LocalBinder = service as ImageHandlingService.LocalBinder
+            imageHandlingService = binder.getService()!!
+            imageHandlingService.setOnImageListener(this@StoryAddActivity)
         }
 
-        private val TAG = javaClass.name
-
-        private val activityWeak: WeakReference<AppCompatActivity> = WeakReference(activity)
-        private val loadingWeak: WeakReference<LoadingDialog> = WeakReference(loadingDialog)
-
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            val activity = activityWeak.get()
-            val loadingDialog = loadingWeak.get()
-
-            // 액티비티가 destroy 되지 않았을 때
-            if (activity != null) {
-                when (msg.what) {
-                    UPLOAD_STORY_DATA -> {
-                        `loadingDialog`?.dismiss()
-                        Log.i("되나?", msg.obj.toString())
-                        activity.finish()
-                    }
-                }
-                // 액티비티가 destroy 되면 바로 빠져나오도록
-            } else {
-                Log.i(TAG, "액티비티 제거로 인해 handler 종료")
-                return
-            }
-        }
-    }
-
-    // 갤러리에서 이미지를 선택했을 때 리사이클러 뷰에 이미지 보여주는 핸들러
-    class MultipleImageHandler(private var imageList: ArrayList<Bitmap>, private val adapter: ImageListAdapter, loadingDialog: LoadingDialog) : Handler() {
-
-        companion object {
-            const val SINGLE_IMAGE = 1
-            const val MULTIPLE_IMAGE = 2
-            const val URL_TO_BITMAP = 3
-        }
-
-        private val TAG = javaClass.name
-
-        //        private val adapterWeak: WeakReference<ImageListAdapter> = WeakReference(adapter)
-        private val loadingWeak: WeakReference<LoadingDialog> = WeakReference(loadingDialog)
-
-        // 백그라운드에서 bitmap 으로 decoding 한 이미지를 받아 UI 에 갱신하는 작업
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            // 액티비티가 destroy 되지 않았을 때
-            if (loadingWeak.get() != null) {
-                when (msg.what) {
-                    SINGLE_IMAGE -> {
-                        loadingWeak.get()?.dismiss()
-                        val image = msg.obj as Bitmap
-                        imageList.add(image)
-                        adapter.notifyDataSetChanged()
-                    }
-                    MULTIPLE_IMAGE -> {
-                        loadingWeak.get()?.dismiss()
-                        Log.i(TAG, msg.obj.toString())
-                        val images = msg.obj as ArrayList<Bitmap>
-                        images.forEach { imageList.add(it) }
-                        adapter.notifyDataSetChanged()
-                    }
-                }
-            } else {
-                Log.i(TAG, "액티비티 제거로 인해 handler 종료")
-                return
-            }
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Log.i(TAG, "이미지 바운드 서비스 연결 종료")
         }
     }
 }

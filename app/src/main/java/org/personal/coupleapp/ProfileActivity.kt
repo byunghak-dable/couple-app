@@ -8,22 +8,18 @@ import android.os.*
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.View
-import android.widget.ImageView
-import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_profile.*
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_PROFILE_INFO
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.dialog.LoadingDialog
-import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
 import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.singleton.CalendarHelper
-import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import java.lang.ref.WeakReference
-import java.util.HashMap
+import kotlin.collections.HashMap
 
-class ProfileActivity : AppCompatActivity(), View.OnClickListener {
+class ProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectionListener {
 
     private val TAG = "ProfileActivity"
 
@@ -87,49 +83,48 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener {
         startActivity(toModifyProfile)
     }
 
+    override fun onHttpRespond(responseData: HashMap<*, *>) {
+        val handler = Handler(Looper.getMainLooper())
+        when (responseData["whichRespond"] as Int) {
+            // 스토리를 불러오는 경우
+            SHOW_PROFILE_INFO -> {
+                loadingDialog.dismiss()
+                val profileData = responseData["respondData"] as ProfileData
+
+                // 싱글턴에 비트맵을 저장한다 -> 추후 프로필 수정 액티비티에서 사용하도록
+                // TODO: 싱글턴 말고 intent 로 되지 않아 다음과 같은 방법을 사용... 방법 더 찾아보자
+                ImageEncodeHelper.bitmapList.clear()
+                CalendarHelper.timeList.clear()
+                ImageEncodeHelper.bitmapList.add(profileData.profile_image as Bitmap)
+                CalendarHelper.timeList.add(profileData.birthday)
+
+                // 메인 UI 변경
+                handler.post {
+                    profileImageIV.setImageBitmap(profileData.profile_image as Bitmap)
+                    nameTV.text = profileData.name
+                    stateTV.text = profileData.state_message
+                    birthdayTV.text = CalendarHelper.timeInMillsToDate(profileData.birthday)
+                    sexTV.text = profileData.sex
+                }
+            }
+        }
+    }
+
     // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
     /*
     바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
     서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
      */
-    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+    private val connection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
             httpConnectionService = binder.getService()!!
-            httpConnectionService.setOnHttpRespondListener(this)
+            httpConnectionService.setOnHttpRespondListener(this@ProfileActivity)
             getProfileData()
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
             Log.i(TAG, "바운드 서비스 연결 종료")
-        }
-
-        override fun onHttpRespond(responseData: HashMap<*, *>) {
-            val handler = Handler(Looper.getMainLooper())
-
-            when (responseData["whichRespond"] as Int) {
-                // 스토리를 불러오는 경우
-                SHOW_PROFILE_INFO -> {
-                    loadingDialog.dismiss()
-                    val profileData = responseData["respondData"] as ProfileData
-
-                    // 싱글턴에 비트맵을 저장한다 -> 추후 프로필 수정 액티비티에서 사용하도록
-                    // TODO: 싱글턴 말고 intent 로 되지 않아 다음과 같은 방법을 사용... 방법 더 찾아보자
-                    ImageEncodeHelper.bitmapList.clear()
-                    CalendarHelper.timeList.clear()
-                    ImageEncodeHelper.bitmapList.add(profileData.profile_image as Bitmap)
-                    CalendarHelper.timeList.add(profileData.birthday)
-
-                    // 메인 UI 변경
-                    handler.post {
-                        profileImageIV.setImageBitmap(profileData.profile_image as Bitmap)
-                        nameTV.text = profileData.name
-                        stateTV.text = profileData.state_message
-                        birthdayTV.text = CalendarHelper.timeInMillsToDate(profileData.birthday)
-                        sexTV.text = profileData.sex
-                    }
-                }
-            }
         }
 
         // 프로필 데이터를 보여주는 메소드

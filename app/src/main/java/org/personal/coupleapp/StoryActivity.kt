@@ -12,20 +12,21 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.activity_story.*
-import org.personal.coupleapp.interfaces.ItemClickListener
+import org.personal.coupleapp.interfaces.recyclerView.ItemClickListener
 import org.personal.coupleapp.adapter.StoryGridAdapter
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_COUPLE_PROFILE
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_STORY_DATA
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.dialog.LoadingDialog
-import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
 import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.InfiniteScrollListener
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 
-class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListener, SwipeRefreshLayout.OnRefreshListener {
+class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListener, SwipeRefreshLayout.OnRefreshListener,
+    HTTPConnectionListener {
 
     private val TAG = javaClass.name
 
@@ -122,65 +123,63 @@ class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListen
         httpConnectionService.serverGetRequest(makeRequestUrl(0, "getStoryData"), REQUEST_STORY_DATA, GET_STORY_DATA)
     }
 
+    override fun onHttpRespond(responseData: HashMap<*, *>) {
+        val handler = Handler(Looper.getMainLooper())
+        when (responseData["whichRespond"] as Int) {
+            // 로그인을 할 경우
+            GET_STORY_DATA -> {
+                swipeRefreshSR.isRefreshing = false
+
+                when (responseData["respondData"]) {
+                    null -> {
+                        Log.i(TAG, "onHttpRespond : 데이터 더이상 없음")
+                    }
+                    else -> {
+                        val fetchedStoryList = responseData["respondData"] as ArrayList<StoryData>
+                        fetchedStoryList.forEach { storyList.add(it) }
+                        handler.post { storyGridAdapter.notifyDataSetChanged() }
+                        Log.i(TAG, "onHttpRespond : 스토리 데이터 받아옴")
+                    }
+                }
+            }
+            GET_COUPLE_PROFILE_DATA -> {
+                loadingDialog.dismiss()
+                // 커플 데이터를 hashmap 으로 받는다
+                val coupleData = responseData["respondData"] as HashMap<*, *>
+                val senderData: ProfileData = coupleData["senderProfile"] as ProfileData
+                val receiverData: ProfileData = coupleData["receiverProfile"] as ProfileData
+
+                // 커플 프로필 UI 작업
+                handler.post {
+                    // sender 프로필 정보 입력
+                    Glide.with(this).load(senderData.profile_image).into(senderProfileIV)
+                    senderNameTV.text = senderData.name
+                    senderBirthdayTV.text = CalendarHelper.timeInMillsToDate(senderData.birthday)
+
+                    // receiver 프로필 정보 입력
+                    Glide.with(this).load(receiverData.profile_image).into(receiverProfileIV)
+                    receiverNameTV.text = receiverData.name
+                    receiverBirthdayTV.text = CalendarHelper.timeInMillsToDate(receiverData.birthday)
+                }
+            }
+        }
+    }
+
     // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
     /*
     바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
     서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
      */
-    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+    private val connection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
             httpConnectionService = binder.getService()!!
-            httpConnectionService.setOnHttpRespondListener(this)
+            httpConnectionService.setOnHttpRespondListener(this@StoryActivity)
             getInitData()
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
             Log.i(TAG, "바운드 서비스 연결 종료")
-        }
-
-        override fun onHttpRespond(responseData: HashMap<*, *>) {
-            // 메인 UI 작업을 담당하는 핸들러 -> 액티비티가 아닌 ServiceConnection 의 추상 클래스 내부에서 UI 를 다루기 위해 생성
-            val handler = Handler(Looper.getMainLooper())
-
-            when (responseData["whichRespond"] as Int) {
-                // 로그인을 할 경우
-                GET_STORY_DATA -> {
-                    swipeRefreshSR.isRefreshing = false
-
-                    when (responseData["respondData"]) {
-                        null -> {
-                            Log.i(TAG, "onHttpRespond : 데이터 더이상 없음")
-                        }
-                        else -> {
-                            val fetchedStoryList = responseData["respondData"] as ArrayList<StoryData>
-                            fetchedStoryList.forEach { storyList.add(it) }
-                            handler.post { storyGridAdapter.notifyDataSetChanged() }
-                            Log.i(TAG, "onHttpRespond : 스토리 데이터 받아옴")
-                        }
-                    }
-                }
-                GET_COUPLE_PROFILE_DATA -> {
-                    loadingDialog.dismiss()
-                    // 커플 데이터를 hashmap 으로 받는다
-                    val coupleData = responseData["respondData"] as HashMap<*, *>
-                    val senderData: ProfileData = coupleData["senderProfile"] as ProfileData
-                    val receiverData: ProfileData = coupleData["receiverProfile"] as ProfileData
-
-                    // 커플 프로필 UI 작업
-                    handler.post {
-                        // sender 프로필 정보 입력
-                        Glide.with(this@StoryActivity).load(senderData.profile_image).into(senderProfileIV)
-                        senderNameTV.text = senderData.name
-                        senderBirthdayTV.text = CalendarHelper.timeInMillsToDate(senderData.birthday)
-
-                        // receiver 프로필 정보 입력
-                        Glide.with(this@StoryActivity).load(receiverData.profile_image).into(receiverProfileIV)
-                        receiverNameTV.text = receiverData.name
-                        receiverBirthdayTV.text = CalendarHelper.timeInMillsToDate(receiverData.birthday)
-                    }
-                }
-            }
         }
 
         // 초기 커플 프로필 데이터와 스토리 데이터 가져오기

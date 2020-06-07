@@ -1,6 +1,5 @@
 package org.personal.coupleapp
 
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -17,15 +16,17 @@ import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_UPDATE_PLAN_DATA
 import org.personal.coupleapp.data.PlanData
 import org.personal.coupleapp.dialog.*
-import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
 import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.text.DateFormat
 import java.util.*
+import kotlin.collections.HashMap
 
 class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanTypeDialog.DialogListener, TimePickerDialog.TimePickerListener,
-    InformDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener {
+    InformDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener,
+    HTTPConnectionListener {
 
     private val TAG = javaClass.name
 
@@ -288,30 +289,31 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
         finish()
     }
 
+    // http 바인드 서비스 인터페이스 메소드
+    override fun onHttpRespond(responseData: HashMap<*, *>) {
+        when (responseData["whichRespond"] as Int) {
+            // 스토리를 불러오는 경우
+            PLAN_DATA_CHANGED -> {
+                loadingDialog.dismiss()
+                finish()
+            }
+        }
+    }
+
     // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
     /*
     바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
     서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
      */
-    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+    private val connection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
             httpConnectionService = binder.getService()!!
-            httpConnectionService.setOnHttpRespondListener(this)
+            httpConnectionService.setOnHttpRespondListener(this@CalendarAddPlanActivity)
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
             Log.i(TAG, "바운드 서비스 연결 종료")
-        }
-
-        override fun onHttpRespond(responseData: HashMap<*, *>) {
-            when (responseData["whichRespond"] as Int) {
-                // 스토리를 불러오는 경우
-                PLAN_DATA_CHANGED -> {
-                    loadingDialog.dismiss()
-                    this@CalendarAddPlanActivity.finish()
-                }
-            }
         }
     }
 }

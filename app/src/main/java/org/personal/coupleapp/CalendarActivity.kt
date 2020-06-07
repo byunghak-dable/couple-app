@@ -13,12 +13,12 @@ import com.prolificinteractive.materialcalendarview.CalendarMode
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import com.prolificinteractive.materialcalendarview.OnDateSelectedListener
 import kotlinx.android.synthetic.main.activity_calendar.*
-import org.personal.coupleapp.interfaces.ItemClickListener
+import org.personal.coupleapp.interfaces.recyclerView.ItemClickListener
 import org.personal.coupleapp.adapter.PlanAdapter
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_PLAN_DATA
 import org.personal.coupleapp.data.PlanData
 import org.personal.coupleapp.dialog.LoadingDialog
-import org.personal.coupleapp.service.HTTPConnectionInterface
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
 import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.calendar.EventDecorator
 import org.personal.coupleapp.utils.calendar.OneDayDecorator
@@ -28,7 +28,9 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 
-class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelectedListener, ItemClickListener {
+class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelectedListener,
+    ItemClickListener,
+    HTTPConnectionListener {
 
     private val TAG = javaClass.name
 
@@ -152,16 +154,48 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
 
     }
 
+    // http 바인드 서비스 인터페이스 메소드
+    override fun onHttpRespond(responseData: HashMap<*, *>) {
+        val handler = Handler(Looper.getMainLooper())
+        when (responseData["whichRespond"] as Int) {
+            GET_PLAN_DATA -> {
+                Log.i(TAG, "onHttpRespond : 일정 데이터 가져오기")
+                loadingDialog.dismiss()
+
+                when (responseData["whichRespond"]) {
+                    null -> {
+                        Log.i(TAG, "캘린더 : 데이터 더이상 없음")
+                    }
+                    else -> {
+                        val returnedData = responseData["respondData"] as HashMap<*, *>
+                        val monthPlanList = returnedData["monthPlanList"] as ArrayList<PlanData>
+                        val dayPlanList = returnedData["dayPlanList"] as ArrayList<PlanData>
+                        val dates = returnedData["dates"] as ArrayList<CalendarDay>
+
+                        monthPlanList.forEach { this.monthPlanList.add(it) }
+                        dayPlanList.forEach { this.dayPlanList.add(it) }
+
+                        handler.post {
+                            calendarCV.addDecorator(EventDecorator(this, R.color.red, dates))
+                            planAdapter.notifyDataSetChanged()
+                        }
+                        Log.i(TAG, "캘린더 view : $dayPlanList")
+                    }
+                }
+            }
+        }
+    }
+
     // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
     /*
     바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
     서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
      */
-    private val connection: ServiceConnection = object : ServiceConnection, HTTPConnectionInterface {
+    private val connection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
             httpConnectionService = binder.getService()!!
-            httpConnectionService.setOnHttpRespondListener(this)
+            httpConnectionService.setOnHttpRespondListener(this@CalendarActivity)
 
             val what = "getPlanData"
             val requestUrl = "$serverPage?what=$what&&startDateTime=$startDateTime&&endDateTime=$endDateTime"
@@ -173,38 +207,6 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
 
         override fun onServiceDisconnected(name: ComponentName) {
             Log.i(TAG, "바운드 서비스 연결 종료")
-        }
-
-        override fun onHttpRespond(responseData: HashMap<*, *>) {
-            // 메인 UI 작업을 담당하는 핸들러 -> 액티비티가 아닌 ServiceConnection 의 추상 클래스 내부에서 UI 를 다루기 위해 생성
-            val handler = Handler(Looper.getMainLooper())
-
-            when (responseData["whichRespond"] as Int) {
-                GET_PLAN_DATA -> {
-                    Log.i(TAG, "onHttpRespond : 일정 데이터 가져오기")
-                    loadingDialog.dismiss()
-
-                    when (responseData["whichRespond"]) {
-                        null -> {
-                            Log.i(TAG, "캘린더 : 데이터 더이상 없음")
-                        }
-                        else -> {
-                            val returnedData = responseData["respondData"] as HashMap<*, *>
-                            val monthPlanList = returnedData["monthPlanList"] as ArrayList<PlanData>
-                            val dayPlanList = returnedData["dayPlanList"] as ArrayList<PlanData>
-                            val dates = returnedData["dates"] as ArrayList<CalendarDay>
-
-                            monthPlanList.forEach { this@CalendarActivity.monthPlanList.add(it) }
-                            dayPlanList.forEach { this@CalendarActivity.dayPlanList.add(it) }
-                            handler.post {
-                                calendarCV.addDecorator(EventDecorator(this@CalendarActivity, R.color.red, dates))
-                                planAdapter.notifyDataSetChanged()
-                                Log.i(TAG, "캘린더 view : $dayPlanList")
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }
