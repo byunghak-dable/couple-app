@@ -15,8 +15,8 @@ class MainNoticeActivity : AppCompatActivity(), BottomNavigationView.OnNavigatio
         setListener()
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
         bottomNavigation.selectedItemId = R.id.notice
     }
 

@@ -6,8 +6,6 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import kotlinx.android.synthetic.main.activity_main_home.*
-import kotlinx.android.synthetic.main.activity_main_home.bottomNavigation
 import kotlinx.android.synthetic.main.activity_main_more.*
 
 class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
@@ -18,8 +16,8 @@ class MainMoreActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         setListener()
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
         bottomNavigation.selectedItemId = R.id.more
     }
 
