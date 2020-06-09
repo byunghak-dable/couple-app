@@ -1,6 +1,5 @@
 package org.personal.coupleapp.adapter
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.view.LayoutInflater
 import android.view.View
@@ -10,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import org.personal.coupleapp.R
 
 
-class ImageListAdapter(private val imageList: ArrayList<Bitmap>) : RecyclerView.Adapter<ImageListAdapter.ViewHolder>() {
+class ImageListAdapter(private val imageList: ArrayList<Bitmap?>) : RecyclerView.Adapter<ImageListAdapter.ViewHolder>() {
 
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -27,7 +26,7 @@ class ImageListAdapter(private val imageList: ArrayList<Bitmap>) : RecyclerView.
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val imageBitmap: Bitmap = imageList[position]
+        val imageBitmap: Bitmap? = imageList[position]
         holder.imageIV.setImageBitmap(imageBitmap)
     }
 }

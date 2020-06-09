@@ -15,8 +15,8 @@ class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigation
         setListener()
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
         bottomNavigation.selectedItemId = R.id.album
     }
 

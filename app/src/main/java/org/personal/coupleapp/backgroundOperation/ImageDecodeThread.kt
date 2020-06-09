@@ -5,22 +5,21 @@ import android.content.ClipData
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
-import android.provider.ContactsContract
 import android.util.Log
 import androidx.annotation.RequiresApi
+import org.personal.coupleapp.interfaces.service.ImageHandlingListener
 import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import java.io.FileNotFoundException
 import java.io.IOException
 
 @Suppress("UNCHECKED_CAST")
-class ImageDecodeThread(name: String?, private val context: Context, private val mainHandler: Handler) : HandlerThread(name) {
+class ImageDecodeThread(name: String?, private val context: Context, private val imageHandlingListener: ImageHandlingListener) : HandlerThread(name) {
 
     companion object {
         const val DECODE_INTO_BITMAP = 1
@@ -53,10 +52,7 @@ class ImageDecodeThread(name: String?, private val context: Context, private val
 
                         try {
                             val bitmap = ImageDecoder.decodeBitmap(imageSource)
-                            val message = Message.obtain()
-                            message.what = whichMessage
-                            message.obj = bitmap
-                            mainHandler.sendMessage(message)
+                            imageHandlingListener.onSingleImage(bitmap)
                         } catch (e: IOException) {
                             e.printStackTrace()
                         }
@@ -67,8 +63,7 @@ class ImageDecodeThread(name: String?, private val context: Context, private val
 
                         val imageUriList = msg.obj as ClipData?
                         val contentResolver: ContentResolver = context.contentResolver
-                        val bitmapList = ArrayList<Bitmap>()
-                        val message = Message.obtain()
+                        val bitmapList = ArrayList<Bitmap?>()
                         Log.i(TAG, imageUriList.toString())
                         if (imageUriList != null) {
                             for (i in 0 until imageUriList.itemCount) {
@@ -85,25 +80,18 @@ class ImageDecodeThread(name: String?, private val context: Context, private val
                                     e.printStackTrace()
                                 }
                             }
-
-                            message.what = whichMessage
-                            message.obj = bitmapList
-                            mainHandler.sendMessage(message)
+                            imageHandlingListener.onMultipleImage(bitmapList)
                         }
                     }
 
                     DECODE_URL_TO_BITMAP -> {
                         val imageUrls = msg.obj as ArrayList<String>
-                        val imageBitmaps = ArrayList<Bitmap?>()
-                        val message = Message.obtain()
+                        val bitmapList = ArrayList<Bitmap?>()
 
                         Log.i(TAG, "DECODE_URL_TO_BITMAP : $imageUrls")
 
-                        imageUrls.forEach { imageBitmaps.add(ImageEncodeHelper.getServerImage(it)) }
-
-                        message.what = whichMessage
-                        message.obj = imageBitmaps
-                        mainHandler.sendMessage(message)
+                        imageUrls.forEach { bitmapList.add(ImageEncodeHelper.getServerImage(it)) }
+                        imageHandlingListener.onMultipleImage(bitmapList)
                     }
                 }
             }

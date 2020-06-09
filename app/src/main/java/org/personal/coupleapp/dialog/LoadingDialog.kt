@@ -14,12 +14,5 @@ class LoadingDialog : DialogFragment() {
         return AlertDialog.Builder(activity)
             .setView(dialogView)
             .create()
-
-    }
-
-    override fun dismiss() {
-        if (dialog != null && dialog!!.isShowing) {
-            dialog!!.dismiss()
-        }
     }
 }

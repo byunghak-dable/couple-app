@@ -56,6 +56,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".service.ChatService"/>
+        <service android:name=".service.HTTPConnectionService"/>
+        <service android:name=".service.ImageHandlingService"/>
     </application>
 
 </manifest>

@@ -1,35 +1,32 @@
 package org.personal.coupleapp
 
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Bitmap
+import android.os.*
 import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
 import android.util.Log
 import android.view.View
-import android.widget.ImageView
-import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_profile.*
-import kotlinx.android.synthetic.main.activity_profile.profileImageIV
-import org.personal.coupleapp.ProfileActivity.CustomHandler.Companion.SHOW_PROFILE_INFO
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_PROFILE_INFO
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_PROFILE_INFO
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.dialog.LoadingDialog
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
+import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.singleton.CalendarHelper
-import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import java.lang.ref.WeakReference
+import kotlin.collections.HashMap
 
-class ProfileActivity : AppCompatActivity(), View.OnClickListener {
+class ProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectionListener {
 
     private val TAG = "ProfileActivity"
 
     private val serverPage = "Profile"
 
-    private lateinit var serverConnectionThread: ServerConnectionThread
+    private lateinit var httpConnectionService: HTTPConnectionService
+    private val SHOW_PROFILE_INFO = 1
 
     // 로딩 다이얼로그
     private val loadingDialog = LoadingDialog()
@@ -38,49 +35,40 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
         setListener()
-        startWorkerThread()
-        Log.e("ProfileActivity", "thread 종료")
     }
 
-    override fun onResume() {
-        super.onResume()
-        val singleUserID = SharedPreferenceHelper.getInt(this, getText(R.string.userColumnID).toString())
-        val whatRequest = "getProfileData"
-        val requestUrl = "$serverPage?what=$whatRequest&&id=$singleUserID"
-
-        HandlerMessageHelper.serverGetRequest(serverConnectionThread, requestUrl, SHOW_PROFILE_INFO, REQUEST_PROFILE_INFO)
-        loadingDialog.show(supportFragmentManager, "LoadingDialog")
+    override fun onStart() {
+        super.onStart()
+        startBoundService()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopWorkerThread()
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
     }
 
     private fun setListener() {
         modifyProfileIV.setOnClickListener(this)
+        logOutBtn.setOnClickListener(this)
     }
 
-    // 백그라운드 스레드 실행
-    private fun startWorkerThread() {
-        val serverMainHandler = CustomHandler(this, loadingDialog, profileImageIV, nameTV, stateTV, birthdayTV, sexTV)
-
-        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
-        serverConnectionThread.start()
-    }
-
-
-    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
-    private fun stopWorkerThread() {
-        Log.i(TAG, "thread 종료")
-        serverConnectionThread.looper.quit()
+    // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
+    private fun startBoundService() {
+        val startService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startService, connection, BIND_AUTO_CREATE)
     }
 
     override fun onClick(v: View?) {
         when (v?.id) {
 
             R.id.modifyProfileIV -> toModifyProfile()
+            R.id.logOutBtn -> logOut()
         }
+    }
+
+    private fun logOut() {
+        val toSignIn = Intent(this, SignInActivity::class.java)
+        startActivity(toSignIn)
     }
 
     // 프로필 변경 액티비티로 이동(이동할 때 데이터도 같이 전송)
@@ -95,65 +83,58 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener {
         startActivity(toModifyProfile)
     }
 
-    // 프로필 사진 업로드,
-    private class CustomHandler(
-        activity: AppCompatActivity,
-        loadingDialog: LoadingDialog,
-        profileIV: ImageView,
-        nameTV: TextView,
-        stateTV: TextView,
-        birthDayTV: TextView,
-        sexTV: TextView
-    ) : Handler() {
+    override fun onHttpRespond(responseData: HashMap<*, *>) {
+        val handler = Handler(Looper.getMainLooper())
+        when (responseData["whichRespond"] as Int) {
+            // 스토리를 불러오는 경우
+            SHOW_PROFILE_INFO -> {
+                loadingDialog.dismiss()
+                val profileData = responseData["respondData"] as ProfileData
 
-        companion object {
-            const val SHOW_PROFILE_INFO = 1
+                // 싱글턴에 비트맵을 저장한다 -> 추후 프로필 수정 액티비티에서 사용하도록
+                // TODO: 싱글턴 말고 intent 로 되지 않아 다음과 같은 방법을 사용... 방법 더 찾아보자
+                ImageEncodeHelper.bitmapList.clear()
+                CalendarHelper.timeList.clear()
+                ImageEncodeHelper.bitmapList.add(profileData.profile_image as Bitmap)
+                CalendarHelper.timeList.add(profileData.birthday)
+
+                // 메인 UI 변경
+                handler.post {
+                    profileImageIV.setImageBitmap(profileData.profile_image as Bitmap)
+                    nameTV.text = profileData.name
+                    stateTV.text = profileData.state_message
+                    birthdayTV.text = CalendarHelper.timeInMillsToDate(profileData.birthday)
+                    sexTV.text = profileData.sex
+                }
+            }
+        }
+    }
+
+    // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
+    /*
+    바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
+    서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
+     */
+    private val connection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
+            httpConnectionService = binder.getService()!!
+            httpConnectionService.setOnHttpRespondListener(this@ProfileActivity)
+            getProfileData()
         }
 
-        private val TAG = javaClass.name
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i(TAG, "바운드 서비스 연결 종료")
+        }
 
-        private val activityWeak: WeakReference<AppCompatActivity> = WeakReference(activity)
-        private val loadingWeak: WeakReference<LoadingDialog> = WeakReference(loadingDialog)
-        private val profileIVWeak: WeakReference<ImageView> = WeakReference(profileIV)
-        private val nameTVWeak: WeakReference<TextView> = WeakReference(nameTV)
-        private val stateTVWeak: WeakReference<TextView> = WeakReference(stateTV)
-        private val birthDayTVWeak: WeakReference<TextView> = WeakReference(birthDayTV)
-        private val sexTVWeak: WeakReference<TextView> = WeakReference(sexTV)
+        // 프로필 데이터를 보여주는 메소드
+        private fun getProfileData() {
+            val singleUserID = SharedPreferenceHelper.getInt(this@ProfileActivity, getText(R.string.userColumnID).toString())
+            val whatRequest = "getProfileData"
+            val requestUrl = "$serverPage?what=$whatRequest&&id=$singleUserID"
 
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            val activity = activityWeak.get()
-
-            // 액티비티가 destroy 되지 않았을 때
-            if (activity != null) {
-                when (msg.what) {
-                    SHOW_PROFILE_INFO -> {
-                        Log.i("되나", "머지?")
-                        val profileData = msg.obj as ProfileData
-                        // 로딩 다이얼로그 삭제
-                        loadingWeak.get()?.dismiss()
-                        // 액티비티 view 값 지정
-
-                        // 싱글턴에 비트맵을 저장한다 -> 추후 프로필 수정 액티비티에서 사용하도록
-                        // TODO: 싱글턴 말고 intent 로 되지 않아 다음과 같은 방법을 사용... 방법 더 찾아보자
-                        ImageEncodeHelper.bitmapList.clear()
-                        CalendarHelper.timeList.clear()
-                        ImageEncodeHelper.bitmapList.add(profileData.profile_image as Bitmap)
-                        CalendarHelper.timeList.add(profileData.birthday)
-
-                        profileIVWeak.get()?.setImageBitmap(profileData.profile_image as Bitmap)
-                        nameTVWeak.get()?.text = profileData.name
-                        stateTVWeak.get()?.text = profileData.state_message
-                        birthDayTVWeak.get()?.text = CalendarHelper.timeInMillsToDate(profileData.birthday)
-                        sexTVWeak.get()?.text = profileData.sex
-                    }
-                }
-                // 액티비티가 destroy 되면 바로 빠져나오도록
-            } else {
-                Log.i(TAG, "액티비티 제거로 인해 handler 종료")
-                return
-            }
+            loadingDialog.show(supportFragmentManager, "LoadingDialog")
+            httpConnectionService.serverGetRequest(requestUrl, REQUEST_PROFILE_INFO, SHOW_PROFILE_INFO)
         }
     }
 }

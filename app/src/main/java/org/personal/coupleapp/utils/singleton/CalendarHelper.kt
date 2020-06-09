@@ -53,6 +53,11 @@ object CalendarHelper {
         return DateFormat.getTimeInstance(DateFormat.SHORT).format(calendar.time)
     }
 
+    fun getCurrentTime() : String{
+        val calendar = Calendar.getInstance()
+        return DateFormat.getTimeInstance(DateFormat.SHORT).format(calendar.time)
+    }
+
     //------------------ 현재 날짜를 가져오는 메소드들 ------------------
 
     fun getCurrentHour(): Int {

@@ -1,4 +1,4 @@
-package org.personal.coupleapp.adapter
+package org.personal.coupleapp.interfaces.recyclerView
 
 import android.view.View
 

@@ -1,9 +1,9 @@
 package org.personal.coupleapp
 
-import android.app.Activity
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.*
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -12,27 +12,29 @@ import android.widget.TimePicker
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_calendar_add_plan.*
-import org.personal.coupleapp.CalendarAddPlanActivity.CustomHandler.Companion.PLAN_DATA_CHANGED
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_INSERT_PLAN_DATA
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_UPDATE_PLAN_DATA
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_INSERT_PLAN_DATA
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_UPDATE_PLAN_DATA
 import org.personal.coupleapp.data.PlanData
 import org.personal.coupleapp.dialog.*
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
+import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.singleton.CalendarHelper
-import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
-import java.lang.ref.WeakReference
 import java.text.DateFormat
 import java.util.*
+import kotlin.collections.HashMap
 
 class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanTypeDialog.DialogListener, TimePickerDialog.TimePickerListener,
-    InformDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener {
+    InformDialog.DialogListener, DatePickerDialog.DatePickerListener, RadioButtonDialog.DialogListener,
+    HTTPConnectionListener {
 
     private val TAG = javaClass.name
 
     private val serverPage = "CalendarAddPlan"
 
-    private lateinit var serverConnectionThread: ServerConnectionThread
+    private lateinit var httpConnectionService: HTTPConnectionService
+    private val PLAN_DATA_CHANGED = 1
+
     private val loadingDialog by lazy { LoadingDialog() }
 
     private val startCalendar by lazy { intent.getSerializableExtra("startCalendar") as Calendar }
@@ -46,14 +48,18 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_calendar_add_plan)
-        startWorkerThread()
         setListener()
         setInitData()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopWorkerThread()
+    override fun onStart() {
+        super.onStart()
+        startBoundService()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
     }
 
     override fun onBackPressed() {
@@ -89,18 +95,10 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
         notificationBtn.setOnClickListener(this)
     }
 
-    // 백그라운드 스레드 실행
-    private fun startWorkerThread() {
-        val serverMainHandler = CustomHandler(this, loadingDialog)
-
-        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
-        serverConnectionThread.start()
-    }
-
-    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
-    private fun stopWorkerThread() {
-        Log.i(TAG, "thread 종료")
-        serverConnectionThread.looper.quit()
+    // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
+    private fun startBoundService() {
+        val startService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startService, connection, BIND_AUTO_CREATE)
     }
 
     //------------------ 클릭 시 이벤트 관리하는 메소드 모음 ------------------
@@ -140,9 +138,10 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
 
                 loadingDialog.show(supportFragmentManager, "LoadingDialog")
                 if (planDataID == null) {
-                    HandlerMessageHelper.serverPostRequest(serverConnectionThread, serverPage, planData, PLAN_DATA_CHANGED, REQUEST_INSERT_PLAN_DATA)
+                    httpConnectionService.serverPostRequest(serverPage, planData, REQUEST_INSERT_PLAN_DATA, PLAN_DATA_CHANGED)
                 } else {
-                    HandlerMessageHelper.serverPutRequest(serverConnectionThread, serverPage, planData, PLAN_DATA_CHANGED, REQUEST_UPDATE_PLAN_DATA)
+                    httpConnectionService.serverPutRequest(serverPage, planData, REQUEST_UPDATE_PLAN_DATA, PLAN_DATA_CHANGED)
+
 
                 }
             } else {
@@ -290,34 +289,31 @@ class CalendarAddPlanActivity : AppCompatActivity(), View.OnClickListener, PlanT
         finish()
     }
 
-    private class CustomHandler(activity: Activity, loadingDialog: LoadingDialog) : Handler() {
+    // http 바인드 서비스 인터페이스 메소드
+    override fun onHttpRespond(responseData: HashMap<*, *>) {
+        when (responseData["whichRespond"] as Int) {
+            // 스토리를 불러오는 경우
+            PLAN_DATA_CHANGED -> {
+                loadingDialog.dismiss()
+                finish()
+            }
+        }
+    }
 
-        companion object {
-            const val PLAN_DATA_CHANGED = 1
+    // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
+    /*
+    바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
+    서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
+     */
+    private val connection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
+            httpConnectionService = binder.getService()!!
+            httpConnectionService.setOnHttpRespondListener(this@CalendarAddPlanActivity)
         }
 
-        private val TAG = javaClass.name
-
-        private val activityWeakReference: WeakReference<Activity> = WeakReference(activity)
-        private val loadingDialogWeak: WeakReference<LoadingDialog> = WeakReference(loadingDialog)
-
-
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            val activity = activityWeakReference.get()
-
-            if (activity != null) {
-                when (msg.what) {
-                    PLAN_DATA_CHANGED -> {
-                        loadingDialogWeak.get()?.dismiss()
-                        Log.i(TAG, "통신 테스트${msg.obj}")
-                        activity.finish()
-                    }
-                }
-            } else {
-                return
-            }
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i(TAG, "바운드 서비스 연결 종료")
         }
     }
 }

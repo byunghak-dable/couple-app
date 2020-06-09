@@ -14,12 +14,13 @@ class WarningDialog : DialogFragment(), DialogInterface.OnClickListener {
 
     private val TAG = javaClass.name
     private lateinit var dialogListener: DialogListener
-    private val dialogID :Int by lazy { arguments!!.getInt("dialogID") }
+    private var dialogID: Int? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
 
         val title = arguments!!.getString("title")
         val message = arguments!!.getString("message")
+        dialogID = arguments?.getInt("dialogID")
 
         return AlertDialog.Builder(activity)
             .setTitle(title)
@@ -46,6 +47,6 @@ class WarningDialog : DialogFragment(), DialogInterface.OnClickListener {
     }
 
     interface DialogListener {
-        fun applyConfirm(id: Int)
+        fun applyConfirm(id: Int?)
     }
 }

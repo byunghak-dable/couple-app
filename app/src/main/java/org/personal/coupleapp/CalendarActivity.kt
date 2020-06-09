@@ -1,9 +1,9 @@
 package org.personal.coupleapp
 
+import android.content.ComponentName
 import android.content.Intent
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
+import android.content.ServiceConnection
+import android.os.*
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -13,32 +13,33 @@ import com.prolificinteractive.materialcalendarview.CalendarMode
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import com.prolificinteractive.materialcalendarview.OnDateSelectedListener
 import kotlinx.android.synthetic.main.activity_calendar.*
-import org.personal.coupleapp.CalendarActivity.CustomHandler.Companion.GET_PLAN_DATA
-import org.personal.coupleapp.adapter.ItemClickListener
+import org.personal.coupleapp.interfaces.recyclerView.ItemClickListener
 import org.personal.coupleapp.adapter.PlanAdapter
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread
-import org.personal.coupleapp.backgroundOperation.ServerConnectionThread.Companion.REQUEST_PLAN_DATA
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_PLAN_DATA
 import org.personal.coupleapp.data.PlanData
 import org.personal.coupleapp.dialog.LoadingDialog
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
+import org.personal.coupleapp.service.HTTPConnectionService
 import org.personal.coupleapp.utils.calendar.EventDecorator
 import org.personal.coupleapp.utils.calendar.OneDayDecorator
 import org.personal.coupleapp.utils.calendar.SaturdayDecorator
 import org.personal.coupleapp.utils.calendar.SundayDecorator
-import org.personal.coupleapp.utils.singleton.HandlerMessageHelper
-import java.lang.ref.WeakReference
 import java.util.*
 import kotlin.collections.ArrayList
 
 
-class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelectedListener, ItemClickListener {
+class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelectedListener,
+    ItemClickListener,
+    HTTPConnectionListener {
 
     private val TAG = javaClass.name
 
     private val serverPage = "Calendar"
 
-    private lateinit var serverConnectionThread: ServerConnectionThread
+    private lateinit var httpConnectionService: HTTPConnectionService
+    private val GET_PLAN_DATA = 1
+
     private val loadingDialog = LoadingDialog()
-    private var isInitPlanData = false
 
     private var startCalendar: Calendar = Calendar.getInstance()
     private var startDateTime: Long? = null
@@ -46,6 +47,7 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
 
     // 현재 달의 모든 일정 리스트
     private val monthPlanList = ArrayList<PlanData>()
+
     // 선택한 날짜의 일정 리스트
     private val dayPlanList = ArrayList<PlanData>()
     private val planAdapter = PlanAdapter(dayPlanList, this)
@@ -53,27 +55,19 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_calendar)
-        startWorkerThread()
         setListener()
         setCalendarRelatedWork()
         buildRecyclerView()
     }
 
-    override fun onResume() {
-        super.onResume()
-        // 일정 데이터 요청
-        if (!isInitPlanData) {
-            val what = "getPlanData"
-            val requestUrl = "$serverPage?what=$what&&startDateTime=$startDateTime&&endDateTime=$endDateTime"
-            loadingDialog.show(supportFragmentManager, "LoadingDialog")
-            HandlerMessageHelper.serverGetRequest(serverConnectionThread, requestUrl, GET_PLAN_DATA, REQUEST_PLAN_DATA)
-            isInitPlanData = true
-        }
+    override fun onStart() {
+        super.onStart()
+        startBoundService()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopWorkerThread()
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
     }
 
     private fun setListener() {
@@ -81,7 +75,7 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
         addPlanBtn.setOnClickListener(this)
     }
 
-    // 캘린더 관련 작업을 하는 메소드
+    // 캘린더 관련 초반 캘린더 설정을 하는 메소드
     private fun setCalendarRelatedWork() {
         calendarCV.state().edit()
             .setFirstDayOfWeek(Calendar.SUNDAY)
@@ -108,20 +102,6 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
         endDateTime = calendar.timeInMillis
     }
 
-    // 백그라운드 스레드 실행
-    private fun startWorkerThread() {
-        val serverMainHandler = CustomHandler(this, loadingDialog, monthPlanList, dayPlanList, calendarCV, planAdapter)
-
-        serverConnectionThread = ServerConnectionThread("ServerConnectionHelper", serverMainHandler)
-        serverConnectionThread.start()
-    }
-
-    // 백그라운드의 루퍼를 멈춰줌으로써 스레드 종료
-    private fun stopWorkerThread() {
-        Log.i(TAG, "thread 종료")
-        serverConnectionThread.looper.quit()
-    }
-
     // 캘린더 일정 리사이클러 뷰 빌드
     private fun buildRecyclerView() {
         val layoutManager = LinearLayoutManager(this)
@@ -131,12 +111,19 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
         planListRV.adapter = planAdapter
     }
 
+    // 현재 액티비티와 HTTPConnectionService(Bound Service)를 연결하는 메소드
+    private fun startBoundService() {
+        val startService = Intent(this, HTTPConnectionService::class.java)
+        bindService(startService, connection, BIND_AUTO_CREATE)
+    }
+
     override fun onClick(v: View?) {
         when (v?.id) {
             R.id.addPlanBtn -> toAddPlan()
         }
     }
 
+    // 일정 추가하기 버튼을 눌렀을 때
     private fun toAddPlan() {
         val toAddPlan = Intent(this, CalendarAddPlanActivity::class.java)
         val endCalendar = Calendar.getInstance()
@@ -167,54 +154,59 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
 
     }
 
-    private class CustomHandler(
-        activity: AppCompatActivity,
-        loadingDialog: LoadingDialog,
-        val monthPlanList: ArrayList<PlanData>,
-        val dayPlanList: ArrayList<PlanData>,
-        calendarCV: MaterialCalendarView,
-        val planAdapter: PlanAdapter
-    ) :
-        Handler() {
+    // http 바인드 서비스 인터페이스 메소드
+    override fun onHttpRespond(responseData: HashMap<*, *>) {
+        val handler = Handler(Looper.getMainLooper())
+        when (responseData["whichRespond"] as Int) {
+            GET_PLAN_DATA -> {
+                Log.i(TAG, "onHttpRespond : 일정 데이터 가져오기")
+                loadingDialog.dismiss()
 
-        companion object {
-            const val GET_PLAN_DATA = 1
-        }
+                when (responseData["whichRespond"]) {
+                    null -> {
+                        Log.i(TAG, "캘린더 : 데이터 더이상 없음")
+                    }
+                    else -> {
+                        val returnedData = responseData["respondData"] as HashMap<*, *>
+                        val monthPlanList = returnedData["monthPlanList"] as ArrayList<PlanData>
+                        val dayPlanList = returnedData["dayPlanList"] as ArrayList<PlanData>
+                        val dates = returnedData["dates"] as ArrayList<CalendarDay>
 
-        private val TAG = javaClass.name
+                        monthPlanList.forEach { this.monthPlanList.add(it) }
+                        dayPlanList.forEach { this.dayPlanList.add(it) }
 
-        private val activityWeakReference: WeakReference<AppCompatActivity> = WeakReference(activity)
-        private val loadingDialogWeak: WeakReference<LoadingDialog> = WeakReference(loadingDialog)
-        private val calendarCVWeak: WeakReference<MaterialCalendarView> = WeakReference(calendarCV)
-
-        override fun handleMessage(msg: Message) {
-            super.handleMessage(msg)
-
-            val activity = activityWeakReference.get()
-
-            if (activity != null) {
-                when (msg.what) {
-                    GET_PLAN_DATA -> {
-                        loadingDialogWeak.get()?.dismiss()
-                        if (msg.obj == null) {
-                            Log.i(TAG, "데이터 더이상 없음")
-                        } else {
-                            val returnedData = msg.obj as HashMap<*, *>
-                            val monthPlanList = returnedData["monthPlanList"] as ArrayList<PlanData>
-                            val dayPlanList = returnedData["dayPlanList"] as ArrayList<PlanData>
-                            val dates = returnedData["dates"] as ArrayList<CalendarDay>
-
-                            monthPlanList.forEach { this.monthPlanList.add(it) }
-                            dayPlanList.forEach{this.dayPlanList.add(it)}
-                            calendarCVWeak.get()?.addDecorator(EventDecorator(activity, R.color.red, dates))
+                        handler.post {
+                            calendarCV.addDecorator(EventDecorator(this, R.color.red, dates))
                             planAdapter.notifyDataSetChanged()
-                            Log.i(TAG, "캘린더 테스트 : $dayPlanList" )
                         }
+                        Log.i(TAG, "캘린더 view : $dayPlanList")
                     }
                 }
-            } else {
-                return
             }
+        }
+    }
+
+    // Memo : BoundService 의 IBinder 객체를 받아와 현재 액티비티에서 서비스의 메소드를 사용하기 위한 클래스
+    /*
+    바운드 서비스에서는 HTTPConnectionThread(HandlerThread)가 동작하고 있으며, 이 스레드에 메시지를 통해 서버에 요청을 보낸다
+    서버에서 결과를 보내주면 HTTPConnectionThread(HandlerThread)의 인터페이스 메소드 -> 바운드 서비스 -> 바운드 서비스 인터페이스 -> 액티비티 onHttpRespond 에서 handle 한다
+     */
+    private val connection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
+            httpConnectionService = binder.getService()!!
+            httpConnectionService.setOnHttpRespondListener(this@CalendarActivity)
+
+            val what = "getPlanData"
+            val requestUrl = "$serverPage?what=$what&&startDateTime=$startDateTime&&endDateTime=$endDateTime"
+            loadingDialog.show(supportFragmentManager, "LoadingDialog")
+            dayPlanList.clear()
+            monthPlanList.clear()
+            httpConnectionService.serverGetRequest(requestUrl, REQUEST_PLAN_DATA, GET_PLAN_DATA)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i(TAG, "바운드 서비스 연결 종료")
         }
     }
 }
