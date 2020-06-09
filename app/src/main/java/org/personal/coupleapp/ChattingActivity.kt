@@ -84,7 +84,7 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
         val messageData = "$coupleID$delimiter$userColumnID$delimiter$userName$delimiter$profileImageUrl$delimiter$message"
         val values = messageData.split(delimiter)
 
-        chatService.sendMessage(messageData)
+        chatService.sendChatMessage(messageData)
         chattingInputED.text = null
 
         Log.i(TAG, messageData)
@@ -136,7 +136,8 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
         private fun sendInitDataToServer() {
             val delimiter = "@"
             val registerSocketMessage = "registerSocket$delimiter$coupleID$delimiter$userColumnID"
-            chatService.sendMessage(registerSocketMessage)
+            //TODO : 에뮬에서는 바로 실행이 되지만, 개인 기기에서는 lateinit property socketSenderThread has not been initialized 에러 발생 -> 해결책 찾자
+            Handler().postDelayed({ chatService.sendChatMessage(registerSocketMessage) }, 500)
         }
     }
 }
