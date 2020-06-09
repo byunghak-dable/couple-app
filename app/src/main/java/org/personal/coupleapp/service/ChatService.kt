@@ -56,7 +56,7 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
     override fun onDestroy() {
         super.onDestroy()
         // 클라이언트 소켓 제거 하도록 메시지 전송
-        sendChatMessage(SEND_MESSAGE, "quit")
+        sendMessage(SEND_MESSAGE, "quit")
         // 스레드가 바로 종료 되지 않도록 0.5초 후에 스레드 종료
         socketReceiverThread.isStop = true
         socketSenderThread.looper.quit()
@@ -76,8 +76,8 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
 
     //------------------ 액티비티에서 사용할 메소드 모음 ------------------
 
-    fun sendMessage(messageData: String) {
-        sendChatMessage(SEND_MESSAGE, messageData)
+    fun sendChatMessage(messageData: String) {
+        sendMessage(SEND_MESSAGE, messageData)
     }
 
     override fun onReceive(respond: String?) {
@@ -88,7 +88,7 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
     }
 
     // 서버에 메시지를 보내는 메소드(socketSenderThread 에게 메시지를 보낸다)
-    private fun sendChatMessage(whichMessage: Int, chatMessage: String) {
+    private fun sendMessage(whichMessage: Int, chatMessage: String) {
         val message = Message.obtain(socketSenderThread.getHandler())
         message.what = whichMessage
         message.obj = chatMessage
