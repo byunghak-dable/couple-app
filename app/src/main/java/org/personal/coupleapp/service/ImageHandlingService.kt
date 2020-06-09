@@ -8,7 +8,9 @@ import android.os.IBinder
 import android.os.Message
 import android.util.Log
 import org.personal.coupleapp.backgroundOperation.ImageDecodeThread
+import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
 import org.personal.coupleapp.interfaces.service.ImageHandlingListener
+import java.lang.ref.WeakReference
 
 class ImageHandlingService : Service(), ImageHandlingListener {
 
@@ -17,7 +19,7 @@ class ImageHandlingService : Service(), ImageHandlingListener {
     private val binder: IBinder = LocalBinder()
 
     private lateinit var imageDecodeThread: ImageDecodeThread
-    private var imageHandlingListener: ImageHandlingListener? = null
+    private var imageListenerWeak : WeakReference<ImageHandlingListener>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -42,7 +44,7 @@ class ImageHandlingService : Service(), ImageHandlingListener {
     }
 
     fun setOnImageListener(listener: ImageHandlingListener) {
-        imageHandlingListener = listener
+        imageListenerWeak = WeakReference(listener)
     }
 
     inner class LocalBinder : Binder() {
@@ -53,11 +55,11 @@ class ImageHandlingService : Service(), ImageHandlingListener {
     }
 
     override fun onSingleImage(bitmap: Bitmap) {
-        imageHandlingListener!!.onSingleImage(bitmap)
+        imageListenerWeak?.get()!!.onSingleImage(bitmap)
     }
 
     override fun onMultipleImage(bitmapList: ArrayList<Bitmap?>) {
-        imageHandlingListener!!.onMultipleImage(bitmapList)
+        imageListenerWeak?.get()!!.onMultipleImage(bitmapList)
     }
 
 

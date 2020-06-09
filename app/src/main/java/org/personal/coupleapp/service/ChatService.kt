@@ -11,6 +11,7 @@ import org.personal.coupleapp.backgroundOperation.SocketSenderThread
 import org.personal.coupleapp.backgroundOperation.SocketSenderThread.Companion.SEND_MESSAGE
 import org.personal.coupleapp.interfaces.service.ChatListener
 import org.personal.coupleapp.utils.serverConnection.TCPClient
+import java.lang.ref.WeakReference
 
 class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
 
@@ -20,7 +21,7 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
     private lateinit var socketSenderThread: SocketSenderThread
     private lateinit var socketReceiverThread: SocketReceiverThread
 
-    private var chatRespondListener: ChatListener? = null
+    private var chatListenerWeak : WeakReference<ChatListener>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -69,9 +70,8 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
         }
     }
 
-    //
     fun setOnChatRespondListener(listener: ChatListener) {
-        chatRespondListener = listener
+        chatListenerWeak = WeakReference(listener)
     }
 
     //------------------ 액티비티에서 사용할 메소드 모음 ------------------
@@ -83,7 +83,7 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
     override fun onReceive(respond: String?) {
         // 서버 통신이 끊겼을 때 null 값을 읽어드린다(예외 처리)
         if (!respond.isNullOrEmpty()) {
-            chatRespondListener!!.onReceiveChat(respond)
+            chatListenerWeak?.get()!!.onReceiveChat(respond)
         }
     }
 

@@ -12,6 +12,7 @@ import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.PUT_REQUEST
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.DELETE_REQUEST
 import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
+import java.lang.ref.WeakReference
 
 class HTTPConnectionService : Service(), HTTPConnectionListener {
 
@@ -19,7 +20,7 @@ class HTTPConnectionService : Service(), HTTPConnectionListener {
 
     private val binder: IBinder = LocalBinder()
     private lateinit var httpConnectionThread: HTTPConnectionThread
-    private var httpConnectionListener: HTTPConnectionListener? = null
+    private var httpListenerWeak : WeakReference<HTTPConnectionListener>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -51,13 +52,13 @@ class HTTPConnectionService : Service(), HTTPConnectionListener {
     }
 
     fun setOnHttpRespondListener(listener: HTTPConnectionListener) {
-        httpConnectionListener = listener
+        httpListenerWeak = WeakReference(listener)
     }
 
     // 서버 통신 결과를 보내주는 인터페이스 메소드
     override fun onHttpRespond(responseData: HashMap<*, *>) {
         // 서비스에서 받은 결과를 다시 인터페이스를 이용해 메인으로 보냄
-        httpConnectionListener?.onHttpRespond(responseData)
+        httpListenerWeak?.get()!!.onHttpRespond(responseData)
     }
 
 
