@@ -81,14 +81,12 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
     // 보낼 메시지를 봰는  
     private fun formMessageData(message: String) {
         val delimiter = "@"
-        val messageData = "$coupleID$delimiter$userColumnID$delimiter$userName$delimiter$profileImageUrl$delimiter$message"
-        val values = messageData.split(delimiter)
+        val messageData = "sendMessageToCouple$delimiter$coupleID$delimiter$userColumnID$delimiter$userName$delimiter$profileImageUrl$delimiter$message"
 
         chatService.sendChatMessage(messageData)
         chattingInputED.text = null
 
         Log.i(TAG, messageData)
-        Log.i(TAG, values.toString())
     }
 
     // http 바인드 서비스 인터페이스 메소드 : 서비스에 있는 리스너를 통해 메시지를 읽어 온다.
@@ -99,11 +97,11 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
         val delimiter = "@"
         val splitData = respond!!.split(delimiter)
 
-        val coupleColumnID = parseInt(splitData[0])
-        val userColumnID = parseInt(splitData[1])
-        val senderName = splitData[2].replace("'", "")
-        val profileImageUrl = splitData[3].replace("'", "")
-        val message = splitData[4]
+        val coupleColumnID = parseInt(splitData[1])
+        val userColumnID = parseInt(splitData[2])
+        val senderName = splitData[3].replace("'", "")
+        val profileImageUrl = splitData[4].replace("'", "")
+        val message = splitData[5]
         val messageTime = CalendarHelper.getCurrentTime()
 
         // 채팅 데이터 객체 생성
@@ -135,7 +133,8 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
         // 서버 클라이언트 소켓의 변수를 지정하기 위해 접속하자마자 데이터 전송
         private fun sendInitDataToServer() {
             val delimiter = "@"
-            val registerSocketMessage = "registerSocket$delimiter$coupleID$delimiter$userColumnID"
+            val registerSocketMessage = "joinCoupleChat$delimiter$coupleID$delimiter"
+
             //TODO : 에뮬에서는 바로 실행이 되지만, 개인 기기에서는 lateinit property socketSenderThread has not been initialized 에러 발생 -> 해결책 찾자
             Handler().postDelayed({ chatService.sendChatMessage(registerSocketMessage) }, 500)
         }
