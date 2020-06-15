@@ -23,6 +23,7 @@ import org.personal.coupleapp.data.StoryData
 import org.personal.coupleapp.dialog.ChoiceDialog
 import org.personal.coupleapp.dialog.DatePickerDialog
 import org.personal.coupleapp.dialog.LoadingDialog
+import org.personal.coupleapp.interfaces.recyclerView.ItemClickListener
 import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
 import org.personal.coupleapp.interfaces.service.ImageHandlingListener
 import org.personal.coupleapp.service.HTTPConnectionService
@@ -32,7 +33,7 @@ import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 
 class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog.DialogListener, DatePickerDialog.DatePickerListener,
     ImageHandlingListener,
-    HTTPConnectionListener {
+    HTTPConnectionListener, ItemClickListener {
 
     private val TAG = javaClass.name
 
@@ -49,7 +50,7 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
     private val loadingDialog = LoadingDialog()
 
     private var imageList = ArrayList<Bitmap?>()
-    private val imageListAdapter = ImageListAdapter(imageList)
+    private val imageListAdapter = ImageListAdapter(imageList, this)
     private var storyData: StoryData? = null
 
     // 스토리 날짜(밀리세컨으로 받아서 변환한다)
@@ -63,15 +64,6 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         setListener()
         buildRecyclerView()
         startImageService()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (intent.hasExtra("storyData")) {
-            val storyData1: StoryData? = intent.getParcelableExtra("storyData")
-            storyData = storyData1
-            imageHandlingService.decodeImage(storyData1?.photo_path, DECODE_URL_TO_BITMAP)
-        }
     }
 
     override fun onStart() {
@@ -193,6 +185,16 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
         startActivityForResult(galleryIntent, GALLERY_REQUEST_CODE)
     }
 
+    //------------------ 리사이클러뷰 아이템 클릭 리스너 메소드 모음 ------------------
+    override fun onItemClick(view: View?, itemPosition: Int) {
+        Log.i(TAG, "onItemClick : $itemPosition")
+    }
+
+    override fun onItemLongClick(view: View?, itemPosition: Int) {
+        Log.i(TAG, "onItemOnClick : $itemPosition")
+
+    }
+
     //------------------ 바인드 서비스 인터페이스 메소드 모음 ------------------
     // http 서비스 인터페이스 메소드
     override fun onHttpRespond(responseData: HashMap<*, *>) {
@@ -267,6 +269,18 @@ class StoryAddActivity : AppCompatActivity(), View.OnClickListener, ChoiceDialog
             val binder: ImageHandlingService.LocalBinder = service as ImageHandlingService.LocalBinder
             imageHandlingService = binder.getService()!!
             imageHandlingService.setOnImageListener(this@StoryAddActivity)
+
+            if (intent.hasExtra("storyData")) {
+                storyData = intent.getParcelableExtra("storyData")
+
+                titleED.setText(storyData!!.title)
+                descriptionED.setText(storyData!!.description)
+                dateBtn.text = CalendarHelper.timeInMillsToDate(storyData!!.date)
+                dateTimeInMills = storyData!!.date
+
+                loadingDialog.show(supportFragmentManager, "LoadingDailog")
+                imageHandlingService.decodeImage(storyData!!.photo_path, DECODE_URL_TO_BITMAP)
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
