@@ -149,7 +149,7 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
 
     }
 
-    override fun onItemOnClick(view: View?, itemPosition: Int) {
+    override fun onItemLongClick(view: View?, itemPosition: Int) {
     }
 
     // http 바인드 서비스 인터페이스 메소드

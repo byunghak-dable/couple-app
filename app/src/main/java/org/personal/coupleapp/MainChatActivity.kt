@@ -207,7 +207,7 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startActivity(toOpenChat)
     }
 
-    override fun onItemOnClick(view: View?, itemPosition: Int) {
+    override fun onItemLongClick(view: View?, itemPosition: Int) {
         val exitDialog = InformDialog()
         val arguments = Bundle()
 

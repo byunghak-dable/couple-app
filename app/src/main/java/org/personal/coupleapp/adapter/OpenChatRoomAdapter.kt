@@ -44,7 +44,7 @@ class OpenChatRoomAdapter(private val context: Context, private val openChatRoom
         override fun onLongClick(v: View?): Boolean {
             if (adapterPosition != RecyclerView.NO_POSITION) {
 
-                itemClickListener.onItemOnClick(itemView, adapterPosition)
+                itemClickListener.onItemLongClick(itemView, adapterPosition)
             }
             return true
         }

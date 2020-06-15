@@ -31,7 +31,7 @@ class ImageListAdapter(private val imageList: ArrayList<Bitmap?>, private val it
         override fun onLongClick(v: View?): Boolean {
             if (adapterPosition != RecyclerView.NO_POSITION) {
 
-                itemClickListener.onItemOnClick(itemView, adapterPosition)
+                itemClickListener.onItemLongClick(itemView, adapterPosition)
             }
             return true
         }
