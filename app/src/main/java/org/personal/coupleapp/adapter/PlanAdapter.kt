@@ -76,7 +76,7 @@ class PlanAdapter(private val planList: ArrayList<PlanData>, private val itemCli
     private fun setNotificationImage(notificationTime: String?, notificationIV: ImageView) {
         when (notificationTime) {
             "안함" -> return
-            else -> notificationIV.setImageResource(R.drawable.ic_repeat_black_24dp)
+            else -> notificationIV.setImageResource(R.drawable.ic_notifications_black_24dp)
         }
     }
 }
