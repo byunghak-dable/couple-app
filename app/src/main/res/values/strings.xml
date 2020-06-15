@@ -9,6 +9,9 @@
     <string name="description">설명</string>
     <string name="count">갯수</string>
     <string name="profile">프로필</string>
+    <!--    openCV 얼굴 인식 file-name-->
+    <string name="faceFileName">haarcascade_frontalface_alt2.xml</string>
+    <string name="eyeTreeFileName">haarcascade_eye_tree_eyeglasses.xml</string>
     <!--    GoogleMap key-->
     <string name="googleMapKey">AIzaSyBcIHjF8CTs9_qbxMZzP5NZsG8r8zmPg5s</string>
     <!--    서버 관련-->
@@ -19,7 +22,10 @@
     <string name="userColumnID">userColumnID</string>
     <string name="partnerConnection">partnerConnection</string>
     <string name="coupleColumnID">coupleColumnID</string>
-
+    <string name="userName">userName</string>
+    <string name="profileImageUrl">profileImageUrl</string>
+    <string name="firebaseMessagingToken">firebaseMessagingToken</string>
+    <string name="joinedChatRoomNumber">joinedChatRoomNumber</string>
     <!--    로그인/회원가입-->
     <string name="email">이메일</string>
     <string name="password">패스워드</string>
