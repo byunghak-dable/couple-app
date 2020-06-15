@@ -30,21 +30,32 @@ class TCPClient(private val serverName: String, private val serverPort: Int) {
         return true
     }
 
-
     // 커플 ID - 나의 ID - 이름 - 이미지 url - message
-    fun testWrite(message:String) {
+    fun writeMessage(message: String) {
         val writer = PrintWriter(serverOutPut!!)
         writer.println(message)
         writer.flush()
     }
 
-    fun testRead(): String? {
-        val response: String? = bufferedReader!!.readLine()
-        if (response != null) {
-            Log.i(TAG, "제대로 : $response")
-            Log.i(TAG, "메시지 전송 완료")
+    fun readMessage(): String? {
+        if (!socket!!.isClosed) {
+            val response: String? = bufferedReader?.readLine()
+            if (response != null) {
+                Log.i(TAG, "제대로 : $response")
+                Log.i(TAG, "메시지 전송 완료")
+            }
+            return response
         }
-        return response
+        return null
+    }
+
+    fun socketClose() {
+        Log.i(TAG, socket?.isClosed.toString())
+        serverInPut?.close()
+        serverOutPut?.close()
+        bufferedReader?.close()
+        socket?.close()
+        Log.i(TAG, socket?.isClosed.toString())
     }
 }
 
