@@ -12,6 +12,7 @@
     <!--    openCV 얼굴 인식 file-name-->
     <string name="faceFileName">haarcascade_frontalface_alt2.xml</string>
     <string name="eyeTreeFileName">haarcascade_eye_tree_eyeglasses.xml</string>
+    <string name="sunglassesImageFileName">sunglasses.png</string>
     <!--    GoogleMap key-->
     <string name="googleMapKey">AIzaSyBcIHjF8CTs9_qbxMZzP5NZsG8r8zmPg5s</string>
     <!--    서버 관련-->

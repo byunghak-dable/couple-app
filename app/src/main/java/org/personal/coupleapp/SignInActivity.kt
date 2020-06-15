@@ -87,8 +87,7 @@ class SignInActivity : AppCompatActivity(), View.OnClickListener, HTTPConnection
 
     // TODO: 구현해야함
     private fun googleSignIn() {
-        val intent = Intent(this, ChattingActivity::class.java)
-        intent.putExtra("firstTime", true)
+        val intent = Intent(this, CustomCameraActivity::class.java)
         startActivity(intent)
     }
 

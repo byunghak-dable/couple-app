@@ -35,8 +35,10 @@ class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallbac
 
     private val TAG = javaClass.name
 
+    // 위치 찾는 퍼미션 실행 Request Code
+    private val FINE_LOCATION_PERMISSION_REQUEST_CODE = 10
+
     private var customMap: GoogleMap? = null
-    private var hospitalLocation: String? = null
     private var currentLocation: Location? = null
     private var currentLatLng: LatLng? = null
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -50,42 +52,13 @@ class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallbac
         (mapFragment as SupportMapFragment).getMapAsync(this)
     }
 
+    // 클릭 리스너 setting 하는 메소드
     private fun setListener() {
-
+        myLocationBtn.setOnClickListener(this)
+        searchLocationSV.setOnQueryTextListener(this)
     }
 
-    override fun onClick(v: View) {
-        when (v.id) {
-
-        }
-    }
-
-    override fun onBackPressed() {
-        val backButton = Intent(this, MainHomeActivity::class.java)
-        startActivity(backButton)
-        super.onBackPressed()
-    }
-
-    override fun onMapReady(googleMap: GoogleMap) {
-        customMap = googleMap
-        customMap!!.mapType = GoogleMap.MAP_TYPE_NORMAL
-        if (hospitalLocation != "") {
-            val handler = Handler()
-            handler.postDelayed({
-            }, 1000)
-        }
-    }
-
-    override fun onQueryTextSubmit(query: String): Boolean {
-        val location = searchLocationSV!!.query.toString()
-        findLocation(location)
-        return false
-    }
-
-    override fun onQueryTextChange(newText: String): Boolean {
-        return false
-    }
-
+    // 초반 구글 맵을 불러오면서 위치 관련 permission 을 받는다
     private fun locationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED
             || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED
@@ -97,6 +70,30 @@ class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallbac
         }
     }
 
+    override fun onClick(v: View) {
+        when (v.id) {
+            R.id.myLocationBtn -> fetchLastLocation()
+        }
+    }
+
+    // 구글 맵 불러오는 callback 메소드
+    override fun onMapReady(googleMap: GoogleMap) {
+        customMap = googleMap
+        customMap!!.mapType = GoogleMap.MAP_TYPE_NORMAL
+    }
+
+    // searchLocationSV 찾고 싶은 위치를 검색했을 때 위치를 불러오는 callback 메소드
+    override fun onQueryTextSubmit(query: String): Boolean {
+        val location = searchLocationSV!!.query.toString()
+        findLocation(location)
+        return false
+    }
+
+    override fun onQueryTextChange(newText: String): Boolean {
+        return false
+    }
+
+    // 본인의 최근 위치를 찾아서 구글 맵에 표시한다
     @SuppressLint("MissingPermission")
     private fun fetchLastLocation() {
         Log.i(TAG, "지도 테스트 : yes")
@@ -104,6 +101,7 @@ class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallbac
         task.addOnSuccessListener(this)
     }
 
+    // 위치를 찾았을 때 마커를 추가해주는 callback 메소드
     override fun onSuccess(location: Location?) {
         if (location != null) {
             currentLocation = location
@@ -112,21 +110,6 @@ class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallbac
             markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.my_current_location))
             customMap!!.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 16f))
             customMap!!.addMarker(markerOptions)
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        when (requestCode) {
-            FINE_LOCATION_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty()) {
-                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        if (grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-
-                            fetchLastLocation()
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -152,7 +135,19 @@ class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallbac
         }
     }
 
-    companion object {
-        private const val FINE_LOCATION_PERMISSION_REQUEST_CODE = 10
+    // permission callback 메소드
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
+            FINE_LOCATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty()) {
+                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        if (grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+
+                            fetchLastLocation()
+                        }
+                    }
+                }
+            }
+        }
     }
 }

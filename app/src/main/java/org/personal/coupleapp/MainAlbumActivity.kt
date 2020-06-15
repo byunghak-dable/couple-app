@@ -36,7 +36,6 @@ class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigation
     }
 
     // 네비게이션 바를 통해 이동하는 메소드
-    //TODO: 추후 데이터를 같이 보내야 한다.
     private fun toHome() {
         val toHome = Intent(this, MainHomeActivity::class.java)
         startActivity(toHome)
