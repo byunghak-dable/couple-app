@@ -33,7 +33,7 @@
         android:layout_marginEnd="20dp"
         android:background="@color/transparency"
         android:contentDescription="@string/uploadBtn"
-        android:src="@drawable/ic_person_add_black_40dp"
+        android:src="@drawable/ic_baseline_add_comment_40"
         app:layout_constraintBottom_toBottomOf="@id/topBarTV"
         app:layout_constraintRight_toRightOf="@id/topBarTV"
         app:layout_constraintTop_toTopOf="@id/topBarTV" />
@@ -47,7 +47,7 @@
         android:paddingTop="5dp"
         android:paddingEnd="10dp"
         android:paddingBottom="5dp"
-        android:text="@string/couple"
+        android:text="커플 채팅방"
         android:textSize="15sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@id/partnerTV"
@@ -88,13 +88,13 @@
         app:layout_constraintTop_toTopOf="@id/partnerTV" />
 
     <ImageView
-        android:contentDescription="@string/profileImage"
         android:id="@+id/profileImageIV"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginStart="10dp"
         android:background="@drawable/shape_rounded"
         android:backgroundTint="@color/white"
+        android:contentDescription="@string/profileImage"
         android:src="@drawable/ic_person_add_black_40dp"
         app:layout_constraintBottom_toBottomOf="@id/partnerTV"
         app:layout_constraintLeft_toLeftOf="@id/partnerTV"
@@ -111,23 +111,30 @@
         android:paddingTop="5dp"
         android:paddingEnd="10dp"
         android:paddingBottom="5dp"
-        android:text="@string/friendsCouple"
+        android:text="오픈 채팅방"
         android:textSize="15sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@id/friendsCouplesRV"
+        app:layout_constraintBottom_toTopOf="@id/swipeRefreshSR"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/partnerTV" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/friendsCouplesRV"
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshSR"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintLeft_toLeftOf="@id/partnerTV"
         app:layout_constraintRight_toRightOf="@id/partnerTV"
-        app:layout_constraintTop_toBottomOf="@id/sectionFriendsTV" />
+        app:layout_constraintTop_toBottomOf="@id/sectionFriendsTV">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/openChatListRV"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@color/white" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
