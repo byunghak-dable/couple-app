@@ -14,19 +14,19 @@ import org.personal.coupleapp.interfaces.recyclerView.ItemClickListener
 class StoryGridAdapter(val context: Context, private val storyList: ArrayList<StoryData>, private val itemClickListener: ItemClickListener) :
     RecyclerView.Adapter<StoryGridAdapter.ViewHolder>() {
 
-    class ViewHolder(itemView: View, val itemClickListener: ItemClickListener) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+    class ViewHolder(itemView: View, private val itemClickListener: ItemClickListener) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
 
         val storyImage: ImageView = itemView.findViewById(R.id.storyImageIV)
 
         init {
-            storyImage.setOnClickListener(this)
+            itemView.setOnClickListener(this)
         }
 
         override fun onClick(v: View?) {
 
             if (adapterPosition != RecyclerView.NO_POSITION) {
 
-                itemClickListener.onItemClick(storyImage, adapterPosition)
+                itemClickListener.onItemClick(itemView, adapterPosition)
             }
         }
     }
