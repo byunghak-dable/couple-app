@@ -5,9 +5,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
 import android.util.Log
-import org.personal.coupleapp.data.PlanData
-import org.personal.coupleapp.data.ProfileData
-import org.personal.coupleapp.data.StoryData
+import org.personal.coupleapp.data.*
 import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
 import org.personal.coupleapp.utils.serverConnection.HTTPRequest
 import org.personal.coupleapp.utils.serverConnection.HTTPRequest.Companion.POST
@@ -28,12 +26,18 @@ class HTTPConnectionThread(name: String?, private val httpConnectionListener: HT
         const val REQUEST_PROFILE_INFO = 3
         const val REQUEST_COUPLE_PROFILE = 4
         const val REQUEST_PLAN_DATA = 5
+        const val REQUEST_OPEN_CHAT_ROOM_LIST = 6
+        const val REQUEST_CHAT_HISTORY = 7
 
         // post 메소드 관련
         const val REQUEST_SIMPLE_POST_METHOD = 1
         const val REQUEST_INSERT_STORY_DATA = 2
         const val REQUEST_INSERT_PLAN_DATA = 3
         const val REQUEST_SIGN_IN = 4
+        const val REQUEST_INSERT_COUPLE_CHAT_DATA = 5
+        const val REQUEST_INSERT_OPEN_CHAT_ROOM = 6
+        const val REQUEST_INSERT_OPEN_CHAT_USER = 7
+        const val REQUEST_INSERT_OPEN_CHAT_DATA = 8
 
         // put 메소드 관련
         const val REQUEST_PROFILE_UPDATE = 1
@@ -87,6 +91,14 @@ class HTTPConnectionThread(name: String?, private val httpConnectionListener: HT
                             REQUEST_PLAN_DATA -> {
                                 httpRespondData["respondData"] = httpRequest.getPlanData()
                             }
+
+                            REQUEST_OPEN_CHAT_ROOM_LIST -> {
+                                httpRespondData["respondData"] = httpRequest.getOpenChatList()
+                            }
+
+                            REQUEST_CHAT_HISTORY -> {
+                                httpRespondData["respondData"] = httpRequest.getChatHistory()
+                            }
                         }
                     }
 
@@ -116,6 +128,26 @@ class HTTPConnectionThread(name: String?, private val httpConnectionListener: HT
                             REQUEST_SIGN_IN -> {
                                 postData = msgObjHashMap["postData"] as String
                                 httpRespondData["respondData"] = httpRequest.signIn(postData)
+                            }
+
+                            REQUEST_INSERT_COUPLE_CHAT_DATA-> {
+                                postData = msgObjHashMap["postData"] as ChatData
+                                httpRespondData["respondData"] = httpRequest.postChatToServer(postData, "sendCoupleChat")
+                            }
+
+                            REQUEST_INSERT_OPEN_CHAT_ROOM -> {
+                                postData = msgObjHashMap["postData"] as HashMap<*,*>
+                                httpRespondData["respondData"] = httpRequest.postOpenChatRoom(postData, "addOpenChatRoom")
+                            }
+
+                            REQUEST_INSERT_OPEN_CHAT_USER -> {
+                                postData = msgObjHashMap["postData"] as OpenChatUserData
+                                httpRespondData["respondData"] = httpRequest.postOpenChatUser(postData, "addOpenChatUser")
+                            }
+
+                            REQUEST_INSERT_OPEN_CHAT_DATA -> {
+                                postData = msgObjHashMap["postData"] as ChatData
+                                httpRespondData["respondData"] = httpRequest.postChatToServer(postData, "sendOpenChat")
                             }
                         }
                     }
