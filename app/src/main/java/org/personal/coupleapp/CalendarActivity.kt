@@ -24,6 +24,7 @@ import org.personal.coupleapp.utils.calendar.EventDecorator
 import org.personal.coupleapp.utils.calendar.OneDayDecorator
 import org.personal.coupleapp.utils.calendar.SaturdayDecorator
 import org.personal.coupleapp.utils.calendar.SundayDecorator
+import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -43,7 +44,6 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
 
     private var startCalendar: Calendar = Calendar.getInstance()
     private var startDateTime: Long? = null
-    private var endDateTime: Long? = null
 
     // 현재 달의 모든 일정 리스트
     private val monthPlanList = ArrayList<PlanData>()
@@ -95,11 +95,6 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
 
         // 전달 마지막 날의 timeInMills
         startDateTime = calendar.timeInMillis
-
-        calendar[Calendar.MONTH] += 1
-
-        // 다음 달 마지막 날의 timeInMills
-        endDateTime = calendar.timeInMillis
     }
 
     // 캘린더 일정 리사이클러 뷰 빌드
@@ -154,6 +149,9 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
 
     }
 
+    override fun onItemOnClick(view: View?, itemPosition: Int) {
+    }
+
     // http 바인드 서비스 인터페이스 메소드
     override fun onHttpRespond(responseData: HashMap<*, *>) {
         val handler = Handler(Looper.getMainLooper())
@@ -197,8 +195,9 @@ class CalendarActivity : AppCompatActivity(), View.OnClickListener, OnDateSelect
             httpConnectionService = binder.getService()!!
             httpConnectionService.setOnHttpRespondListener(this@CalendarActivity)
 
+            val coupleID by lazy { SharedPreferenceHelper.getInt(this@CalendarActivity, getText(R.string.coupleColumnID).toString()) }
             val what = "getPlanData"
-            val requestUrl = "$serverPage?what=$what&&startDateTime=$startDateTime&&endDateTime=$endDateTime"
+            val requestUrl = "$serverPage?what=$what&&coupleID=$coupleID&&startDateTime=$startDateTime"
             loadingDialog.show(supportFragmentManager, "LoadingDialog")
             dayPlanList.clear()
             monthPlanList.clear()
