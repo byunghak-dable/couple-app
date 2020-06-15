@@ -14,9 +14,10 @@ class SocketReceiverThread(private val tcpClient: TCPClient, private val chatRes
 
         while (!isStop) {
 
-            val respond = tcpClient.testRead()
+            val respond = tcpClient.readMessage()
             chatRespondListener.onReceive(respond)
         }
+        tcpClient.socketClose()
         Log.i(TAG , "ReceiverThread 종료")
     }
 

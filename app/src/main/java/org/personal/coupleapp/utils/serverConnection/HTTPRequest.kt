@@ -7,9 +7,7 @@ import com.google.gson.reflect.TypeToken
 import com.prolificinteractive.materialcalendarview.CalendarDay
 import org.json.JSONArray
 import org.json.JSONObject
-import org.personal.coupleapp.data.PlanData
-import org.personal.coupleapp.data.ProfileData
-import org.personal.coupleapp.data.StoryData
+import org.personal.coupleapp.data.*
 import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import java.util.*
 import kotlin.collections.ArrayList
@@ -106,7 +104,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
                     dayPlanList.add(it)
                     Log.i(TAG, "캘린더 테스트 : ${todayCalendar[Calendar.DAY_OF_MONTH]}")
                     Log.i(TAG, "캘린더 테스트 : ${planCalendar[Calendar.DAY_OF_MONTH]}")
-                    Log.i(TAG, "캘린더 테스트 : ${dayPlanList}")
+                    Log.i(TAG, "캘린더 테스트 : $dayPlanList")
 
                 }
             }
@@ -115,6 +113,34 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
             returnedData["dates"] = dates
         }
         return returnedData
+    }
+
+    // 오픈 채팅방 목록을 불러오는 메소드
+    override fun getOpenChatList(): ArrayList<OpenChatRoomData>? {
+        val gson = Gson()
+        val jsonString: String = hTTPConnection.getRequest()
+
+        Log.i(TAG, "getOpenChatList : $jsonString")
+
+        return if (jsonString != "false") {
+            gson.fromJson(jsonString, object : TypeToken<ArrayList<OpenChatRoomData>>() {}.type)
+        } else {
+            null
+        }
+    }
+
+    // 채팅 데이터를 불러오는 메소드
+    override fun getChatHistory(): ArrayList<ChatData>? {
+        val gson = Gson()
+        val jsonString: String = hTTPConnection.getRequest()
+
+        Log.i(TAG, "getChatHistory : $jsonString")
+
+        return if (jsonString != "false") {
+            gson.fromJson(jsonString, object : TypeToken<ArrayList<ChatData>>() {}.type)
+        } else {
+            null
+        }
     }
 
     //------------------ POST 관련 메소드 모음 ------------------
@@ -127,7 +153,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
     }
 
     override fun signIn(postJsonString: String): ProfileData? {
-        val profileData : ProfileData?
+        val profileData: ProfileData?
         val gson = Gson()
         val jsonString = hTTPConnection.postRequest(postJsonString)
 
@@ -138,6 +164,62 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         }
 
         return profileData
+    }
+
+    // 채팅 메시지를 저장을 요청하는 메소드
+    override fun postChatToServer(chatData: ChatData, what: String): String? {
+        val jsonString: String
+        val gson = Gson()
+        val postJson: String = gson.toJson(chatData)
+
+        // gson 으로 변환한 json 에 어떤 작업을 하는지 알려주는 what 요소 추가
+        val jsonObject = JSONObject(postJson)
+        jsonObject.put("what", what)
+
+        // 결과를 받는다(성공 여부)
+        jsonString = hTTPConnection.postRequest(jsonObject.toString())
+        Log.i(TAG, jsonString)
+
+        return jsonString
+    }
+
+    // 오픈 채팅방을 만들어 서버에 저장을 요청하는 메소드
+    override fun postOpenChatRoom(postData: HashMap<*, *>, what: String): String? {
+        val jsonString: String
+        val gson = Gson()
+        val postJson: String
+        val roomData = postData["openChatRoomData"] as OpenChatRoomData
+        val base64Image = ImageEncodeHelper.bitmapToString(roomData.cover_image as Bitmap)
+
+        // 변환한 이미지를 다시 선언하여 Bitmap 에서 String 타입이 변환
+        roomData.cover_image = base64Image
+        postJson = gson.toJson(postData)
+
+        // gson 으로 변환한 json 에 어떤 작업을 하는지 알려주는 what 요소 추가
+        val jsonObject = JSONObject(postJson)
+        jsonObject.put("what", what)
+
+
+        Log.i(TAG, "image test : $jsonObject")
+
+        // 결과를 받는다(성공 여부)
+        jsonString = hTTPConnection.postRequest(jsonObject.toString())
+        Log.i(TAG, jsonString)
+
+        return jsonString.replace("\"", "")
+    }
+
+    // 유저가 오픈 채팅방에 참여하는 메소드
+    override fun postOpenChatUser(openChatUserData: OpenChatUserData, what: String): String? {
+        val jsonString :String
+        val gson = Gson()
+        val postJson = gson.toJson(openChatUserData)
+        val jsonObject = JSONObject(postJson).apply {
+            put("what", what)
+        }
+
+        jsonString = hTTPConnection.postRequest(jsonObject.toString())
+        return jsonString
     }
 
     //------------------ PUT 관련 메소드 모음 ------------------
@@ -174,6 +256,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         return jsonString.replace("\"", "")
     }
 
+    //------------------ PUT, POST 모두 관여하는 메소드 모음 ------------------
     override fun handleStoryInServer(method: Int, storyData: StoryData, what: String): String? {
         var jsonString: String? = null
         val gson = Gson()
@@ -209,7 +292,6 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         val jsonString: String
         val gson = Gson()
         val postJson: String = gson.toJson(planData)
-        val base64ImageList: ArrayList<String?> = ArrayList()
 
         // gson 으로 변환한 json 에 어떤 작업을 하는지 알려주는 what 요소 추가
         val jsonObject = JSONObject(postJson)

@@ -8,7 +8,6 @@ import android.os.Message
 import android.util.Log
 import androidx.annotation.RequiresApi
 import org.personal.coupleapp.utils.serverConnection.TCPClient
-import java.net.Socket
 
 class SocketSenderThread(name: String?, val tcpClient: TCPClient) : HandlerThread(name) {
 
@@ -33,7 +32,7 @@ class SocketSenderThread(name: String?, val tcpClient: TCPClient) : HandlerThrea
                 when (msg.what) {
 
                     SEND_MESSAGE -> {
-                        tcpClient.testWrite(msg.obj.toString())
+                        tcpClient.writeMessage(msg.obj.toString())
                         Log.i(TAG, "전송?")
 
                     }

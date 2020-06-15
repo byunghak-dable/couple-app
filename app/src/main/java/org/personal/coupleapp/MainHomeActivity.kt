@@ -226,6 +226,10 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         toolChoiceDialog.show(supportFragmentManager, "CameraOrGalleryDialog")
     }
 
+    override fun onItemLongClick(view: View?, itemPosition: Int) {
+        TODO("Not yet implemented")
+    }
+
     //------------------ 다이얼로그 fragment 인터페이스 메소드 모음 ------------------
     // 롹인 버튼만 있는 warning 다이얼로그 이벤트 메소드
     override fun applyConfirm(id: Int?) {

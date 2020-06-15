@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".CoupleChattingActivity">
+
+    <TextView
+        android:id="@+id/topBarTV"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/mainBackground"
+        android:contentDescription="@string/background"
+        android:gravity="center|start"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:text="@string/opponent"
+        android:textColor="@color/black"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/chattingBoxRV"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/chattingBoxRV"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/chattingInputED"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topBarTV" />
+
+    <EditText
+        android:id="@+id/chattingInputED"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:autofillHints=""
+        android:background="@color/transparency"
+        android:hint="@string/chat"
+        android:inputType="text"
+        android:padding="5dp"
+        android:paddingStart="60dp"
+        android:paddingEnd="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/chattingBoxRV" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/shape_rounded"
+        android:backgroundTint="@color/transparency"
+        android:padding="5dp"
+        android:src="@drawable/ic_add_black_30dp"
+        app:layout_constraintBottom_toBottomOf="@id/chattingInputED"
+        app:layout_constraintLeft_toLeftOf="@id/chattingInputED"
+        app:layout_constraintTop_toTopOf="@id/chattingInputED" />
+
+    <ImageButton
+        android:id="@+id/sendBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:backgroundTint="@color/mainBackground"
+        android:src="@drawable/ic_send_black_30dp"
+        app:layout_constraintBottom_toBottomOf="@id/chattingInputED"
+        app:layout_constraintRight_toRightOf="@id/chattingInputED"
+        app:layout_constraintTop_toTopOf="@id/chattingInputED" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

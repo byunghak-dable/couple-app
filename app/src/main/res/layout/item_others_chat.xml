@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
     android:id="@+id/chattingItemCL"
-    android:padding="5dp"
-    android:layout_height="wrap_content">
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="5dp">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/profileCV"
         android:layout_width="45dp"
         android:layout_height="45dp"
-        android:visibility="gone"
         app:cardCornerRadius="30dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -27,39 +27,39 @@
         android:id="@+id/nameTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="이름"
-        android:visibility="gone"
-        android:textStyle="bold"
-        android:textColor="@color/black"
         android:layout_marginStart="5dp"
+        android:text="이름"
+        android:textColor="@color/black"
         android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/messageTV"
         app:layout_constraintLeft_toRightOf="@id/profileCV"
-        app:layout_constraintTop_toTopOf="@id/profileCV"
-        app:layout_constraintBottom_toTopOf="@id/messageTV"/>
+        app:layout_constraintTop_toTopOf="@id/profileCV" />
 
     <TextView
         android:id="@+id/messageTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
         android:background="@drawable/shape_rounded"
         android:backgroundTint="@color/chatBackground"
-        android:layout_marginTop="5dp"
         android:padding="10dp"
         android:text="채팅"
-        android:layout_marginStart="5dp"
         android:textColor="@color/black"
         android:textStyle="bold"
         app:layout_constraintLeft_toRightOf="@id/profileCV"
-        app:layout_constraintTop_toBottomOf="@+id/nameTV"/>
+        app:layout_constraintTop_toBottomOf="@+id/nameTV" />
 
     <TextView
         android:id="@+id/messageTimeTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintLeft_toRightOf="@id/messageTV"
-        android:text="메시지 시간"
         android:padding="5dp"
+        android:text="메시지 시간"
         android:textSize="12dp"
-        app:layout_constraintBottom_toBottomOf="@id/messageTV"/>
+        app:layout_constraintBottom_toBottomOf="@id/messageTV"
+        app:layout_constraintLeft_toRightOf="@id/messageTV" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

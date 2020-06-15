@@ -115,6 +115,9 @@ class StoryActivity : AppCompatActivity(), View.OnClickListener, ItemClickListen
         Log.i(TAG, storyList[itemPosition].id.toString())
     }
 
+    override fun onItemLongClick(view: View?, itemPosition: Int) {
+    }
+
     // 리사이클러 뷰 새로 고침을 하게되면 스토리 데이터를 새로 가져온다
     override fun onRefresh() {
         swipeRefreshSR.isRefreshing = true

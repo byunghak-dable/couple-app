@@ -1,6 +1,8 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+// 구글 파이어베이스
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 29
@@ -48,7 +50,10 @@ dependencies {
 
     // 리사이클러 뷰 url bitmap 으로 변환할 때 사용
     implementation 'com.github.bumptech.glide:glide:4.9.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.10.0'
     // 캘린더 라이브러리 라이센스 - https://github.com/prolificinteractive/material-calendarview/commit/af8fb557af31df9b4ba2c967a15f1a2f24b39e6b
     implementation 'com.github.prolificinteractive:material-calendarview:1.4.2'
+
+    // firebase cloud messaging 을 위한 파이어베이스 dependency
+    implementation 'com.google.firebase:firebase-messaging:20.2.0'
 }

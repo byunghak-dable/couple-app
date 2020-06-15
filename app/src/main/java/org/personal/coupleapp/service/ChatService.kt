@@ -3,6 +3,7 @@ package org.personal.coupleapp.service
 import android.app.Service
 import android.content.Intent
 import android.os.Binder
+import android.os.Handler
 import android.os.IBinder
 import android.os.Message
 import android.util.Log
@@ -21,7 +22,7 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
     private lateinit var socketSenderThread: SocketSenderThread
     private lateinit var socketReceiverThread: SocketReceiverThread
 
-    private var chatListenerWeak : WeakReference<ChatListener>? = null
+    private var chatListenerWeak: WeakReference<ChatListener>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -59,8 +60,10 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
         // 클라이언트 소켓 제거 하도록 메시지 전송
         sendMessage(SEND_MESSAGE, "quit")
         // 스레드가 바로 종료 되지 않도록 0.5초 후에 스레드 종료
-        socketReceiverThread.isStop = true
-        socketSenderThread.looper.quit()
+        Handler().postDelayed({
+            socketReceiverThread.isStop = true
+            socketSenderThread.looper.quit()
+        }, 500)
     }
 
     inner class LocalBinder : Binder() {
@@ -76,7 +79,7 @@ class ChatService : Service(), SocketReceiverThread.ChatRespondListener {
 
     //------------------ 액티비티에서 사용할 메소드 모음 ------------------
 
-    fun sendChatMessage(messageData: String) {
+    fun sendMessage(messageData: String) {
         sendMessage(SEND_MESSAGE, messageData)
     }
 
