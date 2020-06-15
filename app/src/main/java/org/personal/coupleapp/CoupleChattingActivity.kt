@@ -11,8 +11,9 @@ import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import kotlinx.android.synthetic.main.activity_chatting.*
+import kotlinx.android.synthetic.main.activity_couple_chatting.*
 import org.personal.coupleapp.adapter.ChatAdapter
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_CHAT_HISTORY
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_INSERT_COUPLE_CHAT_DATA
 import org.personal.coupleapp.data.ChatData
 import org.personal.coupleapp.interfaces.service.ChatListener
@@ -23,16 +24,17 @@ import org.personal.coupleapp.utils.singleton.CalendarHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
 
-class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener, HTTPConnectionListener {
+class CoupleChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener, HTTPConnectionListener {
 
     private val TAG = javaClass.name
 
-    private val serverPage = "Chatting"
+    private val serverPage = "CoupleChatting"
 
     private lateinit var chatService: ChatService
     private lateinit var httpConnectionService: HTTPConnectionService
 
     private val SEND_MESSAGE_RESPOND = 1
+    private val GET_CHAT_HISTORY = 2
 
     private val coupleChatList by lazy { ArrayList<ChatData>() }
     private val chatAdapter: ChatAdapter by lazy { ChatAdapter(this, userColumnID, coupleChatList) }
@@ -44,7 +46,7 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_chatting)
+        setContentView(R.layout.activity_couple_chatting)
         setListener()
         buildRecyclerView()
     }
@@ -83,6 +85,11 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
         val startHttpService = Intent(this, HTTPConnectionService::class.java)
         bindService(startChatService, chatConnection, BIND_AUTO_CREATE)
         bindService(startHttpService, httpConnection, BIND_AUTO_CREATE)
+    }
+
+    // GET 요청을 보낼 url 을 만드는 메소드
+    private fun makeRequestUrl(what: String): String {
+        return "$serverPage?what=$what&&roomID=$coupleID"
     }
 
     //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
@@ -142,6 +149,17 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
                 val respondMessage = responseData["respondData"].toString()
                 Log.i(TAG, "onHttpRespond respond :$respondMessage")
             }
+
+            GET_CHAT_HISTORY -> {
+                Log.i(TAG, "http 테스트 : ${responseData["respondData"]}")
+                if (responseData["respondData"] == null) {
+                    Log.i(TAG, "GET_CHAT_HISTORY : 채팅 데이터가 없음")
+                } else {
+                    val fetchedChatHistory = responseData["respondData"] as ArrayList<ChatData>
+                    fetchedChatHistory.forEach { coupleChatList.add(it) }
+                    handler.post{chatAdapter.notifyDataSetChanged()}
+                }
+            }
         }
     }
 
@@ -150,10 +168,10 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: ChatService.LocalBinder = service as ChatService.LocalBinder
             chatService = binder.getService()!!
-            chatService.setOnChatRespondListener(this@ChattingActivity)
+            chatService.setOnChatRespondListener(this@CoupleChattingActivity)
             sendInitDataToServer()
             joinCoupleChat()
-            SharedPreferenceHelper.setInt(this@ChattingActivity, getText(R.string.joinedChatRoomNumber).toString(), coupleID)
+            SharedPreferenceHelper.setInt(this@CoupleChattingActivity, getText(R.string.joinedChatRoomNumber).toString(), coupleID)
             Log.i(TAG, "Bound Service Connection : Connected")
         }
 
@@ -185,7 +203,9 @@ class ChattingActivity : AppCompatActivity(), View.OnClickListener, ChatListener
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
             httpConnectionService = binder.getService()!!
-            httpConnectionService.setOnHttpRespondListener(this@ChattingActivity)
+            httpConnectionService.setOnHttpRespondListener(this@CoupleChattingActivity)
+
+            httpConnectionService.serverGetRequest(makeRequestUrl("getCoupleChatHistory"), REQUEST_CHAT_HISTORY, GET_CHAT_HISTORY)
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
