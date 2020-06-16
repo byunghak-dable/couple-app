@@ -24,6 +24,18 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <ImageButton
+        android:id="@+id/videoCallBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:background="@color/transparency"
+        android:contentDescription="@string/addPlan"
+        android:src="@drawable/ic_baseline_video_call_40"
+        app:layout_constraintBottom_toBottomOf="@id/topBarTV"
+        app:layout_constraintRight_toRightOf="@id/topBarTV"
+        app:layout_constraintTop_toTopOf="@id/topBarTV" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chattingBoxRV"
         android:layout_width="0dp"
