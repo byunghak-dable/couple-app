@@ -33,7 +33,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar"
         android:usesCleartextTraffic="true">
-        <activity android:name=".AlbumGalleryActivity"/>
+        <activity android:name=".AlbumGalleryActivity" />
         <activity android:name=".CustomCameraActivity" />
         <activity android:name=".OpenChattingActivity" />
         <activity android:name=".OpenChatAddRoomActivity" />
@@ -77,30 +77,39 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".AppRTCLibrary.ConnectActivity"
+        <!--        AppRTC 라이브러리 액티비티 START-->
+        <activity
+            android:name=".AppRTCLibrary.ConnectActivity"
             android:label="@string/app_name"
-            android:windowSoftInputMode="adjustPan"
-            android:theme="@style/AppTheme">
+            android:theme="@style/AppTheme"
+            android:windowSoftInputMode="adjustPan">
 
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="appr.tc"/>
-                <data android:scheme="http" android:host="appr.tc"/>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="appr.tc"
+                    android:scheme="https" />
+                <data
+                    android:host="appr.tc"
+                    android:scheme="http" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".AppRTCLibrary.SettingsActivity"
+        <activity
+            android:name=".AppRTCLibrary.SettingsActivity"
             android:label="@string/settings_name"
-            android:theme="@style/AppTheme">
-        </activity>
+            android:theme="@style/AppTheme" />
 
-        <activity android:name=".AppRTCLibrary.CallActivity"
+        <activity
+            android:name=".AppRTCLibrary.CallActivity"
+            android:configChanges="orientation|smallestScreenSize|screenSize|screenLayout"
             android:label="@string/app_name"
-            android:screenOrientation="fullUser"
-            android:configChanges="orientation|smallestScreenSize|screenSize|screenLayout">
-        </activity>
+            android:screenOrientation="fullUser" />
+        <!--        AppRTC 라이브러리 액티비티 END-->
 
         <service android:name=".service.ChatService" />
         <service android:name=".service.HTTPConnectionService" />
