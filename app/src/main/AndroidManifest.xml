@@ -20,7 +20,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar"
         android:usesCleartextTraffic="true">
-        <activity android:name=".CustomCameraActivity"></activity>
+        <activity android:name=".AlbumGalleryActivity"/>
+        <activity android:name=".CustomCameraActivity" />
         <activity android:name=".OpenChattingActivity" />
         <activity android:name=".OpenChatAddRoomActivity" />
         <activity android:name=".OpenChatActivity" />
@@ -30,9 +31,9 @@
             android:value="@string/googleMapKey" />
 
         <activity android:name=".StoryAddActivity" />
-        <activity android:name=".ProfileActivity" />
+        <activity android:name=".MainProfileActivity" />
         <activity android:name=".ProfileModifyActivity" />
-        <activity android:name=".MapActivity" />
+        <activity android:name=".MainMapActivity" />
         <activity android:name=".CoupleChattingActivity" />
         <activity android:name=".CalendarAddPlanActivity" />
         <activity android:name=".CalendarActivity" />
