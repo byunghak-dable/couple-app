@@ -12,9 +12,12 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_couple_chatting.*
+import org.json.JSONObject
+import org.personal.coupleapp.AppRTCLibrary.ConnectActivity
 import org.personal.coupleapp.adapter.ChatAdapter
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_CHAT_HISTORY
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_INSERT_COUPLE_CHAT_DATA
+import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_SIMPLE_POST_METHOD
 import org.personal.coupleapp.data.ChatData
 import org.personal.coupleapp.interfaces.service.ChatListener
 import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
@@ -35,6 +38,7 @@ class CoupleChattingActivity : AppCompatActivity(), View.OnClickListener, ChatLi
 
     private val SEND_MESSAGE_RESPOND = 1
     private val GET_CHAT_HISTORY = 2
+    private val CALL_OPPONENT = 3
 
     private val coupleChatList by lazy { ArrayList<ChatData>() }
     private val chatAdapter: ChatAdapter by lazy { ChatAdapter(this, userColumnID, coupleChatList) }
@@ -68,6 +72,7 @@ class CoupleChattingActivity : AppCompatActivity(), View.OnClickListener, ChatLi
 
     private fun setListener() {
         sendBtn.setOnClickListener(this)
+        videoCallBtn.setOnClickListener(this)
     }
 
     // 리사이클러 뷰 빌드
@@ -96,7 +101,25 @@ class CoupleChattingActivity : AppCompatActivity(), View.OnClickListener, ChatLi
     override fun onClick(v: View?) {
         when (v?.id) {
             R.id.sendBtn -> formMessageData(chattingInputED.text.toString())
+            R.id.videoCallBtn -> callOpponent()
         }
+    }
+
+    private fun callOpponent() {
+        val roomID = getText(R.string.app_name).toString() + coupleID + "0"
+        val toVideoCall = Intent(this, ConnectActivity::class.java).apply {
+            putExtra("roomID", roomID)
+        }
+        val postJsonObject = JSONObject()
+
+        postJsonObject.put("what", "callOpponent")
+        postJsonObject.put("coupleID", coupleID)
+        postJsonObject.put("userColumnID", userColumnID)
+        postJsonObject.put("roomID", roomID)
+        postJsonObject.put("profileImageUrl", profileImageUrl)
+
+        httpConnectionService.serverPostRequest(serverPage, postJsonObject.toString(), REQUEST_SIMPLE_POST_METHOD, CALL_OPPONENT)
+        startActivity(toVideoCall)
     }
 
     // 커플 ID - 나의 ID - 이름 - 이미지 url - message
@@ -157,8 +180,11 @@ class CoupleChattingActivity : AppCompatActivity(), View.OnClickListener, ChatLi
                 } else {
                     val fetchedChatHistory = responseData["respondData"] as ArrayList<ChatData>
                     fetchedChatHistory.forEach { coupleChatList.add(it) }
-                    handler.post{chatAdapter.notifyDataSetChanged()}
+                    handler.post { chatAdapter.notifyDataSetChanged() }
                 }
+            }
+            CALL_OPPONENT -> {
+                Log.i(TAG, "http 테스트 : ${responseData["respondData"]}")
             }
         }
     }
