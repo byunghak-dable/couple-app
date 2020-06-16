@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.prolificinteractive.materialcalendarview.CalendarDay
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import org.personal.coupleapp.data.*
 import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
@@ -143,6 +144,42 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         }
     }
 
+    // 앨범 폴더를 가져오는 메소드
+    override fun getAlbumFolder(): ArrayList<AlbumFolderData>? {
+        val gson = Gson()
+        val jsonString: String = hTTPConnection.getRequest()
+        val responseJsonObject = JSONObject(jsonString)
+        val httpStatus = responseJsonObject.getInt("httpStatus")
+        val albumFolder = responseJsonObject.get("albumData").toString()
+
+        var returnedData: ArrayList<AlbumFolderData>? = null
+
+        if (httpStatus == 200) {
+            if (albumFolder != "false") {
+                returnedData = gson.fromJson(albumFolder, object : TypeToken<ArrayList<AlbumFolderData>>() {}.type)
+            }
+        }
+        return returnedData
+    }
+
+    override fun getAlbumImages(): ArrayList<AlbumGalleryData>? {
+        val gson = Gson()
+        val jsonString: String = hTTPConnection.getRequest()
+        Log.i(TAG, "http test: $jsonString")
+        val responseJsonObject = JSONObject(jsonString)
+        val httpStatus = responseJsonObject.getInt("httpStatus")
+        val albumImages = responseJsonObject.get("imagesData").toString()
+
+        var returnedData: ArrayList<AlbumGalleryData>? = null
+
+        if (httpStatus == 200) {
+            if (albumImages != "false") {
+                returnedData = gson.fromJson(albumImages, object : TypeToken<ArrayList<AlbumGalleryData>>() {}.type)
+            }
+        }
+        return returnedData
+    }
+
     //------------------ POST 관련 메소드 모음 ------------------
 
     // 서버에 posting 을 하거나 하나의 value 만을 받을 때 사용
@@ -211,7 +248,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
     // 유저가 오픈 채팅방에 참여하는 메소드
     override fun postOpenChatUser(openChatUserData: OpenChatUserData, what: String): String? {
-        val jsonString :String
+        val jsonString: String
         val gson = Gson()
         val postJson = gson.toJson(openChatUserData)
         val jsonObject = JSONObject(postJson).apply {
@@ -220,6 +257,44 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
         jsonString = hTTPConnection.postRequest(jsonObject.toString())
         return jsonString
+    }
+
+    // 앨범 폴더를 추가하는 메소드
+    override fun postAlbumFolder(albumFolderData: AlbumFolderData, what: String): Int? {
+        val responseCode: String
+        val responseJsonObject: JSONObject
+        val gson = Gson()
+        val postJson = gson.toJson(albumFolderData)
+        val postJsonObject = JSONObject(postJson).apply {
+            put("what", what)
+        }
+
+        responseCode = hTTPConnection.postRequest(postJsonObject.toString())
+        responseJsonObject = JSONObject(responseCode)
+        return responseJsonObject.getInt("httpStatus")
+    }
+
+    // 앨범 사진들을 추가하는 메소드
+    override fun postAlbumImages(galleryList: ArrayList<AlbumGalleryData>, what: String): Int? {
+        val responseCode: String
+        val responseJsonObject: JSONObject
+        val postJson: String
+        val gson = Gson()
+        val galleryJsonObject = JSONObject()
+        val galleryJsonArray: JSONArray
+
+        galleryList.forEach {
+            it.image_url = ImageEncodeHelper.bitmapToString(it.image_url as Bitmap)
+        }
+        postJson = gson.toJson(galleryList)
+
+        galleryJsonArray = JSONArray(postJson)
+        galleryJsonObject.put("what", what)
+        galleryJsonObject.put("galleryImages", galleryJsonArray)
+
+        responseCode = hTTPConnection.postRequest(galleryJsonObject.toString())
+        responseJsonObject = JSONObject(responseCode)
+        return responseJsonObject.getInt("httpStatus")
     }
 
     //------------------ PUT 관련 메소드 모음 ------------------
