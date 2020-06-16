@@ -7,8 +7,10 @@ import android.graphics.Bitmap
 import android.os.*
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
+import android.view.MenuItem
 import android.view.View
-import kotlinx.android.synthetic.main.activity_profile.*
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlinx.android.synthetic.main.activity_main_profile.*
 import org.personal.coupleapp.backgroundOperation.HTTPConnectionThread.Companion.REQUEST_PROFILE_INFO
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.dialog.LoadingDialog
@@ -19,7 +21,7 @@ import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import kotlin.collections.HashMap
 
-class ProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectionListener {
+class MainProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectionListener, BottomNavigationView.OnNavigationItemSelectedListener {
 
     private val TAG = "ProfileActivity"
 
@@ -33,7 +35,7 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectio
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_profile)
+        setContentView(R.layout.activity_main_profile)
         setListener()
     }
 
@@ -42,12 +44,18 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectio
         startBoundService()
     }
 
+    override fun onResume() {
+        super.onResume()
+        bottomNavigation.selectedItemId = R.id.profile
+    }
+
     override fun onStop() {
         super.onStop()
         unbindService(connection)
     }
 
     private fun setListener() {
+        bottomNavigation.setOnNavigationItemSelectedListener(this)
         modifyProfileIV.setOnClickListener(this)
         logOutBtn.setOnClickListener(this)
     }
@@ -58,6 +66,40 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectio
         bindService(startService, connection, BIND_AUTO_CREATE)
     }
 
+    //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.home -> toHome()
+            R.id.chat -> toChat()
+            R.id.album -> toAlbum()
+            R.id.map -> toMap()
+        }
+        overridePendingTransition(0, 0)
+        return true
+    }
+
+    // 네비게이션 바를 통해 이동하는 메소드
+    private fun toHome() {
+        val toHome = Intent(this, MainHomeActivity::class.java)
+        startActivity(toHome)
+    }
+
+    private fun toChat() {
+        val toChat = Intent(this, MainChatActivity::class.java)
+        startActivity(toChat)
+    }
+
+    private fun toAlbum() {
+        val toAlbum = Intent(this, MainAlbumActivity::class.java)
+        startActivity(toAlbum)
+    }
+
+    private fun toMap() {
+        val toMap = Intent(this, MainMapActivity::class.java)
+        startActivity(toMap)
+    }
+
+    //------------------ 클릭 시 이벤트 관리하는 메소드 모음 ------------------
     override fun onClick(v: View?) {
         when (v?.id) {
 
@@ -119,7 +161,7 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectio
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val binder: HTTPConnectionService.LocalBinder = service as HTTPConnectionService.LocalBinder
             httpConnectionService = binder.getService()!!
-            httpConnectionService.setOnHttpRespondListener(this@ProfileActivity)
+            httpConnectionService.setOnHttpRespondListener(this@MainProfileActivity)
             getProfileData()
         }
 
@@ -129,7 +171,7 @@ class ProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConnectio
 
         // 프로필 데이터를 보여주는 메소드
         private fun getProfileData() {
-            val singleUserID = SharedPreferenceHelper.getInt(this@ProfileActivity, getText(R.string.userColumnID).toString())
+            val singleUserID = SharedPreferenceHelper.getInt(this@MainProfileActivity, getText(R.string.userColumnID).toString())
             val whatRequest = "getProfileData"
             val requestUrl = "$serverPage?what=$whatRequest&&id=$singleUserID"
 

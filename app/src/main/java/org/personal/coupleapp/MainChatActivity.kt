@@ -147,12 +147,13 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         return requestUrl
     }
 
+    //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.home -> toHome()
             R.id.album -> toAlbum()
-            R.id.notice -> toNotice()
-            R.id.more -> toMore()
+            R.id.map ->  toMap()
+            R.id.profile -> toProfile()
         }
         overridePendingTransition(0, 0)
         return true
@@ -170,13 +171,13 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startActivity(toAlbum)
     }
 
-    private fun toNotice() {
-        val toMap = Intent(this, MainNoticeActivity::class.java)
+    private fun toMap() {
+        val toMap = Intent(this, MainMapActivity::class.java)
         startActivity(toMap)
     }
 
-    private fun toMore() {
-        val toMore = Intent(this, MainMoreActivity::class.java)
+    private fun toProfile() {
+        val toMore = Intent(this, MainProfileActivity::class.java)
         startActivity(toMore)
     }
 

@@ -8,8 +8,8 @@ import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
-import android.os.Handler
 import android.util.Log
+import android.view.MenuItem
 import android.view.View
 import android.widget.SearchView
 import android.widget.Toast
@@ -25,13 +25,14 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.OnSuccessListener
-import kotlinx.android.synthetic.main.activity_map.*
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlinx.android.synthetic.main.activity_main_map.*
 
 import java.io.IOException
 
 
-class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallback, SearchView.OnQueryTextListener,
-    OnSuccessListener<Location?> {
+class MainMapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallback, SearchView.OnQueryTextListener,
+    OnSuccessListener<Location?>, BottomNavigationView.OnNavigationItemSelectedListener {
 
     private val TAG = javaClass.name
 
@@ -45,15 +46,21 @@ class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallbac
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_map)
+        setContentView(R.layout.activity_main_map)
         setListener()
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         locationPermission()
         (mapFragment as SupportMapFragment).getMapAsync(this)
     }
 
+    override fun onResume() {
+        super.onResume()
+        bottomNavigation.selectedItemId = R.id.map
+    }
+
     // 클릭 리스너 setting 하는 메소드
     private fun setListener() {
+        bottomNavigation.setOnNavigationItemSelectedListener(this)
         myLocationBtn.setOnClickListener(this)
         searchLocationSV.setOnQueryTextListener(this)
     }
@@ -70,6 +77,39 @@ class MapActivity : AppCompatActivity(), View.OnClickListener, OnMapReadyCallbac
         }
     }
 
+    //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.home ->  toHome()
+            R.id.chat -> toChat()
+            R.id.album -> toAlbum()
+            R.id.profile -> toProfile()
+        }
+        overridePendingTransition(0, 0)
+        return true
+    }
+
+    private fun toHome() {
+        val toMap = Intent(this, MainHomeActivity::class.java)
+        startActivity(toMap)
+    }
+
+    private fun toChat() {
+        val toChat = Intent(this, MainChatActivity::class.java)
+        startActivity(toChat)
+    }
+
+    private fun toAlbum() {
+        val toAlbum = Intent(this, MainAlbumActivity::class.java)
+        startActivity(toAlbum)
+    }
+
+    private fun toProfile() {
+        val toMore = Intent(this, MainProfileActivity::class.java)
+        startActivity(toMore)
+    }
+
+    //------------------ 버튼 클릭 시 이벤트 관리하는 메소드 모음 ------------------
     override fun onClick(v: View) {
         when (v.id) {
             R.id.myLocationBtn -> fetchLastLocation()
