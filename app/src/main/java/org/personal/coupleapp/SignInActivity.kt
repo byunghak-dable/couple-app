@@ -9,6 +9,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_sign_in.*
 import org.json.JSONObject
+import org.personal.coupleapp.AppRTCLibrary.ConnectActivity
 import org.personal.coupleapp.data.ProfileData
 import org.personal.coupleapp.dialog.LoadingDialog
 import org.personal.coupleapp.interfaces.service.HTTPConnectionListener
@@ -87,7 +88,7 @@ class SignInActivity : AppCompatActivity(), View.OnClickListener, HTTPConnection
 
     // TODO: 구현해야함
     private fun googleSignIn() {
-        val intent = Intent(this, CustomCameraActivity::class.java)
+        val intent = Intent(this, ConnectActivity::class.java)
         startActivity(intent)
     }
 
