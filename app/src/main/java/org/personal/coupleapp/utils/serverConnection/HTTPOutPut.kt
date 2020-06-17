@@ -7,9 +7,9 @@ interface HTTPOutPut {
 
     // GET 메소드
     fun getMethodToServer(): String
-    fun getProfileFromServer(): ProfileData
+    fun getProfileFromServer(): ProfileData?
     fun getStoryFromServer(): ArrayList<StoryData>?
-    fun getCoupleProfile(): HashMap<String, ProfileData>
+    fun getCoupleProfile(): HashMap<String, ProfileData>?
     fun getPlanData(): HashMap<String, Any>?
     fun getOpenChatList(): ArrayList<OpenChatRoomData>?
     fun getChatHistory(): ArrayList<ChatData>?
@@ -30,7 +30,7 @@ interface HTTPOutPut {
     fun putProfileToServer(profileData: ProfileData): ProfileData?
 
     // DELETE 메소드
-    fun deleteMethodToServer(postJsonString: String): String
+    fun deleteMethodToServer(postJsonString: String): String?
 
     // POST 혹은 PUT 메소드
     fun handleStoryInServer(method: Int, storyData: StoryData, what: String): String?
