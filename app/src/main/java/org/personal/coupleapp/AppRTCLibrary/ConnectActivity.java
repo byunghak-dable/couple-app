@@ -199,7 +199,9 @@ public class ConnectActivity extends Activity {
       roomListView.requestFocus();
       roomListView.setItemChecked(0, true);
     }
-    connectToRoom("443", false, false, false, 0);
+    if(getIntent().hasExtra("roomID")) {
+      connectToRoom(getIntent().getStringExtra("roomID"), false, false, false, 0);
+    }
     finish();
   }
 
