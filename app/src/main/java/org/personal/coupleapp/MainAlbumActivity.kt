@@ -184,7 +184,7 @@ class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigation
         when (responseData["whichRespond"] as Int) {
             ADD_ALBUM_FOLDER -> {
                 Log.i(TAG, "http test : ${responseData["respondData"]}")
-                if (responseData["respondData"] == 200) {
+                if (responseData["respondData"] == 201) {
                     albumList.clear()
                     loadingDialog.show(supportFragmentManager, "LoadingDialog")
                     httpConnectionService.serverGetRequest(makeRequestUrl("getAlbumData"), REQUEST_GET_ALBUM_FOLDER, GET_ALBUM_FOLDER)
@@ -202,7 +202,7 @@ class MainAlbumActivity : AppCompatActivity(), BottomNavigationView.OnNavigation
                 }
             }
             DELETE_FOLDER-> {
-                if (responseData["respondData"] == "true") {
+                if (responseData["respondData"] != null) {
                     albumList.clear()
                     loadingDialog.show(supportFragmentManager, "LoadingDialog")
                     httpConnectionService.serverGetRequest(makeRequestUrl("getAlbumData"), REQUEST_GET_ALBUM_FOLDER, GET_ALBUM_FOLDER)

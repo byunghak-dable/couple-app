@@ -131,22 +131,23 @@ class MainProfileActivity : AppCompatActivity(), View.OnClickListener, HTTPConne
             // 스토리를 불러오는 경우
             SHOW_PROFILE_INFO -> {
                 loadingDialog.dismiss()
-                val profileData = responseData["respondData"] as ProfileData
+                if (responseData["respondData"] != null) {
+                    val profileData = responseData["respondData"] as ProfileData
 
-                // 싱글턴에 비트맵을 저장한다 -> 추후 프로필 수정 액티비티에서 사용하도록
-                // TODO: 싱글턴 말고 intent 로 되지 않아 다음과 같은 방법을 사용... 방법 더 찾아보자
-                ImageEncodeHelper.bitmapList.clear()
-                CalendarHelper.timeList.clear()
-                ImageEncodeHelper.bitmapList.add(profileData.profile_image as Bitmap)
-                CalendarHelper.timeList.add(profileData.birthday)
+                    // 싱글턴에 비트맵을 저장한다 -> 추후 프로필 수정 액티비티에서 사용하도록
+                    ImageEncodeHelper.bitmapList.clear()
+                    CalendarHelper.timeList.clear()
+                    ImageEncodeHelper.bitmapList.add(profileData.profile_image as Bitmap)
+                    CalendarHelper.timeList.add(profileData.birthday)
 
-                // 메인 UI 변경
-                handler.post {
-                    profileImageIV.setImageBitmap(profileData.profile_image as Bitmap)
-                    nameTV.text = profileData.name
-                    stateTV.text = profileData.state_message
-                    birthdayTV.text = CalendarHelper.timeInMillsToDate(profileData.birthday)
-                    sexTV.text = profileData.sex
+                    // 메인 UI 변경
+                    handler.post {
+                        profileImageIV.setImageBitmap(profileData.profile_image as Bitmap)
+                        nameTV.text = profileData.name
+                        stateTV.text = profileData.state_message
+                        birthdayTV.text = CalendarHelper.timeInMillsToDate(profileData.birthday)
+                        sexTV.text = profileData.sex
+                    }
                 }
             }
         }

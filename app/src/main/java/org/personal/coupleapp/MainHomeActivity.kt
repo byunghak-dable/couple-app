@@ -278,10 +278,12 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
             }
             // 스토리를 삭제할 경우
             DELETE_STORY_DATA -> {
-                val storyIndex = parseInt(responseData["respondData"].toString())
-                storyList.removeAt(storyIndex)
-                handler.post { storyAdapter.notifyDataSetChanged() }
-                Log.i(TAG, "스토리 삭제하기 : 삭제하기 완료")
+                if (responseData["respondData"] != null) {
+                    val storyIndex = parseInt(responseData["respondData"].toString())
+                    storyList.removeAt(storyIndex)
+                    handler.post { storyAdapter.notifyDataSetChanged() }
+                    Log.i(TAG, "스토리 삭제하기 : 삭제하기 완료")
+                }
             }
         }
     }
