@@ -27,7 +27,6 @@ import org.webrtc.RendererCommon.ScalingType;
  * Fragment for call control.
  */
 public class CallFragment extends Fragment {
-  private TextView contactView;
   private ImageButton cameraSwitchButton;
   private ImageButton videoScalingButton;
   private ImageButton toggleMuteButton;
@@ -54,7 +53,6 @@ public class CallFragment extends Fragment {
     View controlView = inflater.inflate(R.layout.fragment_call, container, false);
 
     // Create UI controls.
-    contactView = controlView.findViewById(R.id.contact_name_call);
     ImageButton disconnectButton = controlView.findViewById(R.id.button_call_disconnect);
     cameraSwitchButton = controlView.findViewById(R.id.button_call_switch_camera);
     videoScalingButton = controlView.findViewById(R.id.button_call_scaling_mode);
@@ -111,7 +109,6 @@ public class CallFragment extends Fragment {
     Bundle args = getArguments();
     if (args != null) {
       String contactName = args.getString(CallActivity.EXTRA_ROOMID);
-      contactView.setText(contactName);
       videoCallEnabled = args.getBoolean(CallActivity.EXTRA_VIDEO_CALL, true);
       captureSliderEnabled = videoCallEnabled
           && args.getBoolean(CallActivity.EXTRA_VIDEO_CAPTUREQUALITYSLIDER_ENABLED, false);
