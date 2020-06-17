@@ -675,12 +675,12 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
   // Log |msg| and Toast about it.
   private void logAndToast(String msg) {
-    Log.d(TAG, msg);
-    if (logToast != null) {
-      logToast.cancel();
-    }
-    logToast = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
-    logToast.show();
+//    Log.d(TAG, msg);
+//    if (logToast != null) {
+//      logToast.cancel();
+//    }
+//    logToast = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
+//    logToast.show();
   }
 
   private void reportError(final String description) {
