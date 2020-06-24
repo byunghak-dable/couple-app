@@ -28,6 +28,8 @@ class HTTPConnectionThread(name: String?, private val httpConnectionListener: HT
         const val REQUEST_PLAN_DATA = 5
         const val REQUEST_OPEN_CHAT_ROOM_LIST = 6
         const val REQUEST_CHAT_HISTORY = 7
+        const val REQUEST_GET_ALBUM_FOLDER = 8
+        const val REQUEST_GET_ALBUM_IMAGES = 9
 
         // post 메소드 관련
         const val REQUEST_SIMPLE_POST_METHOD = 1
@@ -38,6 +40,8 @@ class HTTPConnectionThread(name: String?, private val httpConnectionListener: HT
         const val REQUEST_INSERT_OPEN_CHAT_ROOM = 6
         const val REQUEST_INSERT_OPEN_CHAT_USER = 7
         const val REQUEST_INSERT_OPEN_CHAT_DATA = 8
+        const val REQUEST_INSERT_ALBUM_FOLDER_DATA = 9
+        const val REQUEST_INSERT_ALBUM_IMAGES = 10
 
         // put 메소드 관련
         const val REQUEST_PROFILE_UPDATE = 1
@@ -99,6 +103,13 @@ class HTTPConnectionThread(name: String?, private val httpConnectionListener: HT
                             REQUEST_CHAT_HISTORY -> {
                                 httpRespondData["respondData"] = httpRequest.getChatHistory()
                             }
+                            REQUEST_GET_ALBUM_FOLDER -> {
+                                httpRespondData["respondData"] = httpRequest.getAlbumFolder()
+                            }
+
+                            REQUEST_GET_ALBUM_IMAGES -> {
+                                httpRespondData["respondData"] = httpRequest.getAlbumImages()
+                            }
                         }
                     }
 
@@ -148,6 +159,15 @@ class HTTPConnectionThread(name: String?, private val httpConnectionListener: HT
                             REQUEST_INSERT_OPEN_CHAT_DATA -> {
                                 postData = msgObjHashMap["postData"] as ChatData
                                 httpRespondData["respondData"] = httpRequest.postChatToServer(postData, "sendOpenChat")
+                            }
+
+                            REQUEST_INSERT_ALBUM_FOLDER_DATA -> {
+                                postData = msgObjHashMap["postData"] as AlbumFolderData
+                                httpRespondData["respondData"] = httpRequest.postAlbumFolder(postData, "addAlbum")
+                            }
+                            REQUEST_INSERT_ALBUM_IMAGES-> {
+                                postData = msgObjHashMap["postData"] as ArrayList<AlbumGalleryData>
+                                httpRespondData["respondData"] = httpRequest.postAlbumImages(postData, "addAlbumImages")
                             }
                         }
                     }

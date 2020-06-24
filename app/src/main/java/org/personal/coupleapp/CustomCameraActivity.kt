@@ -1,16 +1,15 @@
 package org.personal.coupleapp
 
 import android.Manifest
-import android.content.ContentValues
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.SeekBar
@@ -20,13 +19,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_custom_camera.*
 import org.opencv.android.*
-import org.opencv.core.*
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.core.MatOfRect
+import org.opencv.core.Size
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
 import org.opencv.objdetect.CascadeClassifier
 import org.personal.coupleapp.adapter.FilterAdapter
 import org.personal.coupleapp.data.FilterData
-import java.io.ByteArrayOutputStream
+import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
@@ -238,6 +240,14 @@ class CustomCameraActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraV
         filterRV.visibility = View.VISIBLE
     }
 
+    private fun saveImage() {
+        val toAlbumGallery = Intent()
+        ImageEncodeHelper.bitmapList.clear()
+        ImageEncodeHelper.bitmapList.add(capturedImage)
+        setResult(RESULT_OK, toAlbumGallery)
+        finish()
+    }
+
     private fun showPhotoPreview() {
 
         photoPreview.visibility = View.VISIBLE
@@ -245,38 +255,6 @@ class CustomCameraActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraV
     }
 
     // 캡처한 이미지 저장하는 메소드
-    private fun saveImage() {
-
-        val values = ContentValues().apply {
-
-            put(MediaStore.Images.Media.TITLE, "MyCamera")
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.IS_PENDING, 1)
-        }
-
-        val collection: Uri =
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        val imageUri: Uri = contentResolver.insert(collection, values)!!
-
-        contentResolver.openFileDescriptor(imageUri, "w", null).use {
-            FileOutputStream(it!!.fileDescriptor).use { outputStream ->
-
-                val byteArray: ByteArray
-                val byteArrayStream = ByteArrayOutputStream()
-
-                capturedImage.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayStream)
-                byteArray = byteArrayStream.toByteArray()
-                outputStream.write(byteArray)
-                outputStream.close()
-            }
-        }
-
-        values.clear()
-        values.put(MediaStore.Images.Media.IS_PENDING, 0)
-        contentResolver.update(imageUri, values, null, null)
-
-        photoPreview.visibility = View.GONE
-    }
 
     private fun loadOpenCV() {
 
@@ -435,3 +413,37 @@ class CustomCameraActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraV
     override fun onStopTrackingTouch(seekBar: SeekBar?) {
     }
 }
+
+
+//private fun saveImage() {
+//
+//    val values = ContentValues().apply {
+//
+//        put(MediaStore.Images.Media.TITLE, "MyCamera")
+//        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+//        put(MediaStore.Images.Media.IS_PENDING, 1)
+//    }
+//
+//    val collection: Uri =
+//        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+//    val imageUri: Uri = contentResolver.insert(collection, values)!!
+//
+//    contentResolver.openFileDescriptor(imageUri, "w", null).use {
+//        FileOutputStream(it!!.fileDescriptor).use { outputStream ->
+//
+//            val byteArray: ByteArray
+//            val byteArrayStream = ByteArrayOutputStream()
+//
+//            capturedImage.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayStream)
+//            byteArray = byteArrayStream.toByteArray()
+//            outputStream.write(byteArray)
+//            outputStream.close()
+//        }
+//    }
+//
+//    values.clear()
+//    values.put(MediaStore.Images.Media.IS_PENDING, 0)
+//    contentResolver.update(imageUri, values, null, null)
+//
+//    photoPreview.visibility = View.GONE
+//}

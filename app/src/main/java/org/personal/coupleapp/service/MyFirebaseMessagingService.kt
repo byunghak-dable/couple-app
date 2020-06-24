@@ -2,6 +2,7 @@ package org.personal.coupleapp.service
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.util.Log
@@ -14,7 +15,9 @@ import com.bumptech.glide.request.transition.Transition
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import org.personal.coupleapp.CoupleChattingActivity
+import org.personal.coupleapp.MainHomeActivity
 import org.personal.coupleapp.R
+import org.personal.coupleapp.VideoCallReceiverActivity
 import org.personal.coupleapp.application.Application.Companion.CHAT_NOTIFICATION_CHANNEL_ID
 import org.personal.coupleapp.utils.singleton.SharedPreferenceHelper
 import java.lang.Integer.parseInt
@@ -46,19 +49,33 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // 사용자가 해당 메시지의 채팅방에 들어와 있는지를 확인하는 변수 -> ChattingActivity 에서 handling 한다.
         val currentRoomID = SharedPreferenceHelper.getInt(this, getText(R.string.joinedChatRoomNumber).toString())
 
-        if (!remoteMessage.data["roomID"].isNullOrEmpty()) {
-            val roomID = parseInt(remoteMessage.data["roomID"]!!)
 
-            if (roomID != currentRoomID) {
-                Glide.with(this).asBitmap().load(remoteMessage.data["profileImageUrl"]).into(object : CustomTarget<Bitmap>() {
-                    override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                        showNotification(remoteMessage.data["name"], remoteMessage.data["message"], resource, roomID)
-                        passOpenChatMessage(remoteMessage.data["whichChat"], roomID, remoteMessage.data["message"])
-                    }
+        when (remoteMessage.data["whichRequest"]) {
+            "videoCall" -> {
+                val intent = Intent(this, VideoCallReceiverActivity::class.java).apply {
+                    addFlags(FLAG_ACTIVITY_NEW_TASK)
+                    putExtra("roomID", remoteMessage.data["roomID"])
+                    putExtra("profileImageUrl", remoteMessage.data["profileImageUrl"])
+                }
+                startActivity(intent)
+            }
 
-                    override fun onLoadCleared(placeholder: Drawable?) {
+            "chat" -> {
+                if (!remoteMessage.data["roomID"].isNullOrEmpty()) {
+                    val roomID = parseInt(remoteMessage.data["roomID"]!!)
+
+                    if (roomID != currentRoomID) {
+                        Glide.with(this).asBitmap().load(remoteMessage.data["profileImageUrl"]).into(object : CustomTarget<Bitmap>() {
+                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                showNotification(remoteMessage.data["name"], remoteMessage.data["message"], resource, roomID)
+                                passOpenChatMessage(remoteMessage.data["whichChat"], roomID, remoteMessage.data["message"])
+                            }
+
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                            }
+                        })
                     }
-                })
+                }
             }
         }
     }

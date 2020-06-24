@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.prolificinteractive.materialcalendarview.CalendarDay
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import org.personal.coupleapp.data.*
 import org.personal.coupleapp.utils.singleton.ImageEncodeHelper
@@ -32,19 +33,23 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
     //------------------ GET 관련 메소드 모음 ------------------
     override fun getMethodToServer(): String {
         val jsonString: String = hTTPConnection.getRequest()
-
+        Log.i(TAG, "getMethodToServer : ${hTTPConnection.responseCode}")
         return jsonString.replace("\"", "")
     }
 
     // 자신의 프로파일 정보를 반환하는 메소드
-    override fun getProfileFromServer(): ProfileData {
+    override fun getProfileFromServer(): ProfileData? {
         val gson = Gson()
         val jsonString: String = hTTPConnection.getRequest()
         Log.i("이미지 에러", jsonString)
         val profileData = gson.fromJson(jsonString, ProfileData::class.java)
         val profileImageBitmap = ImageEncodeHelper.getServerImage(profileData.profile_image.toString())
         profileData.profile_image = profileImageBitmap
-        return profileData
+
+        if (hTTPConnection.responseCode == 200) {
+            return profileData
+        }
+        return null
     }
 
     // 스토리 정보를 반환하는 메소드
@@ -52,9 +57,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         val gson = Gson()
         val jsonString: String = hTTPConnection.getRequest()
 
-        Log.i(TAG, "getStoryFromServer : $jsonString")
-
-        return if (jsonString != "false") {
+        return if (hTTPConnection.responseCode == 200) {
             gson.fromJson(jsonString, object : TypeToken<ArrayList<StoryData>>() {}.type)
         } else {
             null
@@ -62,19 +65,21 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
     }
 
     // 커플 프로파일 정보를 반환하는 메소드
-    override fun getCoupleProfile(): HashMap<String, ProfileData> {
+    override fun getCoupleProfile(): HashMap<String, ProfileData>? {
         val coupleProfile = HashMap<String, ProfileData>()
         val gson = Gson()
         val jsonString: String = hTTPConnection.getRequest()
-        val jsonObject = JSONObject(jsonString)
+        if (hTTPConnection.responseCode == 200) {
+            val jsonObject = JSONObject(jsonString)
+            val senderProfile = jsonObject.get("senderProfile") as JSONArray
+            val receiverProfile = jsonObject.get("receiverProfile") as JSONArray
 
-        val senderProfile = jsonObject.get("senderProfile") as JSONArray
-        val receiverProfile = jsonObject.get("receiverProfile") as JSONArray
+            coupleProfile["senderProfile"] = gson.fromJson(senderProfile[0].toString(), ProfileData::class.java)
+            coupleProfile["receiverProfile"] = gson.fromJson(receiverProfile[0].toString(), ProfileData::class.java)
 
-        coupleProfile["senderProfile"] = gson.fromJson(senderProfile[0].toString(), ProfileData::class.java)
-        coupleProfile["receiverProfile"] = gson.fromJson(receiverProfile[0].toString(), ProfileData::class.java)
-
-        return coupleProfile
+            return coupleProfile
+        }
+        return null
     }
 
     // 일정 정보를 받아 캘린더에 보여주는 메소드
@@ -84,7 +89,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         var returnedData: HashMap<String, Any>? = null
 
         // 데이터베이스에 데이터가 있다면
-        if (jsonString != "false") {
+        if (hTTPConnection.responseCode == 200) {
             returnedData = HashMap()
             val monthPlanList: ArrayList<PlanData> = gson.fromJson(jsonString, object : TypeToken<ArrayList<PlanData>>() {}.type)
             val dayPlanList = ArrayList<PlanData>()
@@ -102,16 +107,15 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
                 if (todayCalendar[Calendar.DAY_OF_MONTH] == planCalendar[Calendar.DAY_OF_MONTH]) {
                     dayPlanList.add(it)
-                    Log.i(TAG, "캘린더 테스트 : ${todayCalendar[Calendar.DAY_OF_MONTH]}")
-                    Log.i(TAG, "캘린더 테스트 : ${planCalendar[Calendar.DAY_OF_MONTH]}")
-                    Log.i(TAG, "캘린더 테스트 : $dayPlanList")
-
                 }
             }
             returnedData["monthPlanList"] = monthPlanList
             returnedData["dayPlanList"] = dayPlanList
             returnedData["dates"] = dates
         }
+
+        Log.i(TAG, "getMethodToServer : ${hTTPConnection.responseCode}")
+
         return returnedData
     }
 
@@ -122,7 +126,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
         Log.i(TAG, "getOpenChatList : $jsonString")
 
-        return if (jsonString != "false") {
+        return if (hTTPConnection.responseCode == 200) {
             gson.fromJson(jsonString, object : TypeToken<ArrayList<OpenChatRoomData>>() {}.type)
         } else {
             null
@@ -136,11 +140,36 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
         Log.i(TAG, "getChatHistory : $jsonString")
 
-        return if (jsonString != "false") {
+        return if (hTTPConnection.responseCode == 200) {
             gson.fromJson(jsonString, object : TypeToken<ArrayList<ChatData>>() {}.type)
         } else {
             null
         }
+    }
+
+    // 앨범 폴더를 가져오는 메소드
+    override fun getAlbumFolder(): ArrayList<AlbumFolderData>? {
+        val gson = Gson()
+        val jsonString: String = hTTPConnection.getRequest()
+
+        var returnedData: ArrayList<AlbumFolderData>? = null
+
+        if (hTTPConnection.responseCode == 200) {
+            returnedData = gson.fromJson(jsonString, object : TypeToken<ArrayList<AlbumFolderData>>() {}.type)
+        }
+        return returnedData
+    }
+
+    override fun getAlbumImages(): ArrayList<AlbumGalleryData>? {
+        val gson = Gson()
+        val jsonString: String = hTTPConnection.getRequest()
+
+        var returnedData: ArrayList<AlbumGalleryData>? = null
+
+        if (hTTPConnection.responseCode == 200) {
+            returnedData = gson.fromJson(jsonString, object : TypeToken<ArrayList<AlbumGalleryData>>() {}.type)
+        }
+        return returnedData
     }
 
     //------------------ POST 관련 메소드 모음 ------------------
@@ -157,7 +186,7 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         val gson = Gson()
         val jsonString = hTTPConnection.postRequest(postJsonString)
 
-        profileData = if (jsonString != "false") {
+        profileData = if (hTTPConnection.responseCode == 200) {
             gson.fromJson(jsonString, ProfileData::class.java)
         } else {
             null
@@ -199,19 +228,15 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
         val jsonObject = JSONObject(postJson)
         jsonObject.put("what", what)
 
-
-        Log.i(TAG, "image test : $jsonObject")
-
         // 결과를 받는다(성공 여부)
         jsonString = hTTPConnection.postRequest(jsonObject.toString())
-        Log.i(TAG, jsonString)
 
         return jsonString.replace("\"", "")
     }
 
     // 유저가 오픈 채팅방에 참여하는 메소드
     override fun postOpenChatUser(openChatUserData: OpenChatUserData, what: String): String? {
-        val jsonString :String
+        val jsonString: String
         val gson = Gson()
         val postJson = gson.toJson(openChatUserData)
         val jsonObject = JSONObject(postJson).apply {
@@ -220,6 +245,38 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
         jsonString = hTTPConnection.postRequest(jsonObject.toString())
         return jsonString
+    }
+
+    // 앨범 폴더를 추가하는 메소드
+    override fun postAlbumFolder(albumFolderData: AlbumFolderData, what: String): Int? {
+        val gson = Gson()
+        val postJson = gson.toJson(albumFolderData)
+        val postJsonObject = JSONObject(postJson).apply {
+            put("what", what)
+        }
+
+        hTTPConnection.postRequest(postJsonObject.toString())
+        return hTTPConnection.responseCode
+    }
+
+    // 앨범 사진들을 추가하는 메소드
+    override fun postAlbumImages(galleryList: ArrayList<AlbumGalleryData>, what: String): Int? {
+        val postJson: String
+        val gson = Gson()
+        val galleryJsonObject = JSONObject()
+        val galleryJsonArray: JSONArray
+
+        galleryList.forEach {
+            it.image_url = ImageEncodeHelper.bitmapToString(it.image_url as Bitmap)
+        }
+        postJson = gson.toJson(galleryList)
+
+        galleryJsonArray = JSONArray(postJson)
+        galleryJsonObject.put("what", what)
+        galleryJsonObject.put("galleryImages", galleryJsonArray)
+
+        hTTPConnection.postRequest(galleryJsonObject.toString())
+        return hTTPConnection.responseCode
     }
 
     //------------------ PUT 관련 메소드 모음 ------------------
@@ -251,9 +308,13 @@ class HTTPRequest(private val serverPage: String) : HTTPOutPut {
 
     //------------------ DELETE 관련 메소드 모음 ------------------
     // 삭제하는 메소드
-    override fun deleteMethodToServer(postJsonString: String): String {
+    override fun deleteMethodToServer(postJsonString: String): String? {
         val jsonString = hTTPConnection.deleteRequest(postJsonString)
-        return jsonString.replace("\"", "")
+
+        if (hTTPConnection.responseCode == 200) {
+            return jsonString.replace("\"", "")
+        }
+        return null
     }
 
     //------------------ PUT, POST 모두 관여하는 메소드 모음 ------------------

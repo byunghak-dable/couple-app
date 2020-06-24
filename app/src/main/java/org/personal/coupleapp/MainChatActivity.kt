@@ -147,12 +147,13 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         return requestUrl
     }
 
+    //------------------ 네비게이션 바 클릭 시 이벤트 관리하는 메소드 모음 ------------------
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.home -> toHome()
             R.id.album -> toAlbum()
-            R.id.notice -> toNotice()
-            R.id.more -> toMore()
+            R.id.map -> toMap()
+            R.id.profile -> toProfile()
         }
         overridePendingTransition(0, 0)
         return true
@@ -170,13 +171,13 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startActivity(toAlbum)
     }
 
-    private fun toNotice() {
-        val toMap = Intent(this, MainNoticeActivity::class.java)
+    private fun toMap() {
+        val toMap = Intent(this, MainMapActivity::class.java)
         startActivity(toMap)
     }
 
-    private fun toMore() {
-        val toMore = Intent(this, MainMoreActivity::class.java)
+    private fun toProfile() {
+        val toMore = Intent(this, MainProfileActivity::class.java)
         startActivity(toMore)
     }
 
@@ -237,22 +238,24 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
             // 상대방의 채팅 프로필 데이터를 받아온다(두 커플의 데이터를 가져오고 상대방의 프로필을 사용)
             //TODO : 데이터 베이스에서 상대방 프로필만을 가져오도록 구현해야하지만, 싱글 유저 테이블에 컬럼 추가가 필요해서 일단은 다음과 같이 구현 -> 시간이 남으면 구현하기
             GET_COUPLE_PROFILE -> {
-                val coupleData = responseData["respondData"] as HashMap<*, *>
-                val senderData: ProfileData = coupleData["senderProfile"] as ProfileData
-                val receiverData: ProfileData = coupleData["receiverProfile"] as ProfileData
+                if (responseData["respondData"] != null) {
 
-                when (userColumnID) {
-                    senderData.id -> {
-                        handler.post {
-                            partnerTV.text = receiverData.name
-                            Glide.with(this).load(receiverData.profile_image).into(profileImageIV)
+                    val coupleData = responseData["respondData"] as HashMap<*, *>
+                    val senderData: ProfileData = coupleData["senderProfile"] as ProfileData
+                    val receiverData: ProfileData = coupleData["receiverProfile"] as ProfileData
+
+                    when (userColumnID) {
+                        senderData.id -> {
+                            handler.post {
+                                partnerTV.text = receiverData.name
+                                Glide.with(this).load(receiverData.profile_image).into(profileImageIV)
+                            }
                         }
-                    }
-
-                    receiverData.id -> {
-                        handler.post {
-                            partnerTV.text = senderData.name
-                            Glide.with(this).load(senderData.profile_image).into(profileImageIV)
+                        receiverData.id -> {
+                            handler.post {
+                                partnerTV.text = senderData.name
+                                Glide.with(this).load(senderData.profile_image).into(profileImageIV)
+                            }
                         }
                     }
                 }
@@ -276,7 +279,7 @@ class MainChatActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
             EXIT_OPEN_CHAT_ROOM -> {
                 Log.i(TAG, "http 테스트 : ${responseData["respondData"]}")
                 when (responseData["respondData"]) {
-                    "true"-> {
+                    "true" -> {
                         handler.post { swipeRefreshSR.isRefreshing = true }
                         scrollListener.resetState()
                         openChatRoomList.clear()

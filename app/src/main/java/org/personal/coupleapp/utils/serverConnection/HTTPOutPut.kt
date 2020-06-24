@@ -7,26 +7,30 @@ interface HTTPOutPut {
 
     // GET 메소드
     fun getMethodToServer(): String
-    fun getProfileFromServer(): ProfileData
+    fun getProfileFromServer(): ProfileData?
     fun getStoryFromServer(): ArrayList<StoryData>?
-    fun getCoupleProfile(): HashMap<String, ProfileData>
+    fun getCoupleProfile(): HashMap<String, ProfileData>?
     fun getPlanData(): HashMap<String, Any>?
     fun getOpenChatList(): ArrayList<OpenChatRoomData>?
-    fun getChatHistory() : ArrayList<ChatData>?
+    fun getChatHistory(): ArrayList<ChatData>?
+    fun getAlbumFolder() : ArrayList<AlbumFolderData>?
+    fun getAlbumImages() : ArrayList<AlbumGalleryData>?
 
     // POST 메소드
     fun postMethodToServer(postJsonString: String): String
     fun signIn(postJsonString: String): ProfileData?
-    fun postChatToServer(chatData: ChatData, what:String): String?
-    fun postOpenChatRoom(postData: HashMap<*, *>,  what: String) : String?
-    fun postOpenChatUser(openChatUserData: OpenChatUserData, what: String) : String?
+    fun postChatToServer(chatData: ChatData, what: String): String?
+    fun postOpenChatRoom(postData: HashMap<*, *>, what: String): String?
+    fun postOpenChatUser(openChatUserData: OpenChatUserData, what: String): String?
+    fun postAlbumFolder(albumFolderData: AlbumFolderData, what: String): Int?
+    fun postAlbumImages(galleryList: ArrayList<AlbumGalleryData>, what:String): Int?
 
     // PUT 메소드
     fun putMethodToServer(postJsonString: String): String
     fun putProfileToServer(profileData: ProfileData): ProfileData?
 
     // DELETE 메소드
-    fun deleteMethodToServer(postJsonString: String): String
+    fun deleteMethodToServer(postJsonString: String): String?
 
     // POST 혹은 PUT 메소드
     fun handleStoryInServer(method: Int, storyData: StoryData, what: String): String?

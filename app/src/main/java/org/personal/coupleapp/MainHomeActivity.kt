@@ -132,8 +132,8 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         when (item.itemId) {
             R.id.chat -> toChat()
             R.id.album -> toAlbum()
-            R.id.notice -> toNotice()
-            R.id.more -> toMore()
+            R.id.map ->  toMap()
+            R.id.profile -> toProfile()
         }
         overridePendingTransition(0, 0)
         return true
@@ -149,13 +149,13 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
         startActivity(toAlbum)
     }
 
-    private fun toNotice() {
-        val toMap = Intent(this, MainNoticeActivity::class.java)
+    private fun toMap() {
+        val toMap = Intent(this, MainMapActivity::class.java)
         startActivity(toMap)
     }
 
-    private fun toMore() {
-        val toMore = Intent(this, MainMoreActivity::class.java)
+    private fun toProfile() {
+        val toMore = Intent(this, MainProfileActivity::class.java)
         startActivity(toMore)
     }
 
@@ -278,10 +278,12 @@ class MainHomeActivity : AppCompatActivity(), BottomNavigationView.OnNavigationI
             }
             // 스토리를 삭제할 경우
             DELETE_STORY_DATA -> {
-                val storyIndex = parseInt(responseData["respondData"].toString())
-                storyList.removeAt(storyIndex)
-                handler.post { storyAdapter.notifyDataSetChanged() }
-                Log.i(TAG, "스토리 삭제하기 : 삭제하기 완료")
+                if (responseData["respondData"] != null) {
+                    val storyIndex = parseInt(responseData["respondData"].toString())
+                    storyList.removeAt(storyIndex)
+                    handler.post { storyAdapter.notifyDataSetChanged() }
+                    Log.i(TAG, "스토리 삭제하기 : 삭제하기 완료")
+                }
             }
         }
     }

@@ -12,6 +12,7 @@ class HTTPConnection(private val requestUrl: String) {
 
     // 서버에서 json 객체로 인코딩해서 전달받은 jsonString
     private lateinit var jsonString: String
+    var responseCode: Int? = null
 
     // GET 메소드 사용, 서버로부터 데이터를 받아올 때 사용
     fun getRequest(): String {
@@ -34,6 +35,7 @@ class HTTPConnection(private val requestUrl: String) {
             // 에러가 발생하더라도 openConnection 으로 연결한 connection 닫기
             urlConnection.disconnect()
         }
+        responseCode = urlConnection.responseCode
         return jsonString
     }
     
@@ -64,7 +66,6 @@ class HTTPConnection(private val requestUrl: String) {
         urlConnection.setRequestProperty("Content-Type", "application/json; utf-8")
         urlConnection.setRequestProperty("Accept", "application/json")
 
-
         try {
             // 클라이언트에서 서버로 데이터 전송
             outputStream = DataOutputStream(urlConnection.outputStream)
@@ -81,6 +82,7 @@ class HTTPConnection(private val requestUrl: String) {
             // 에러가 발생하더라도 openConnection 으로 연결한 connection 닫기
             urlConnection.disconnect()
         }
+        responseCode = urlConnection.responseCode
         return jsonString
     }
 }
